@@ -36,9 +36,9 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 
 **Auth & Security**
 
-- [ ] Forgot Password flow
-- [ ] Session timeout with auto-logout
-- [ ] Device/session management
+- [x] Forgot Password flow
+- [x] Session timeout with auto-logout
+- [x] Device/session management
 
 **Dashboard**
 
