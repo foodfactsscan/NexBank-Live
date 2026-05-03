@@ -220,10 +220,15 @@ const App = {
 
   setupListeners() {
     window.addEventListener('load', () => {
+      // Force hide loading screen after 3 seconds maximum
       setTimeout(() => {
-        document.getElementById('loading-screen').style.opacity = '0';
-        document.getElementById('loading-screen').style.pointerEvents = 'none';
-      }, 2000);
+        const loader = document.getElementById('loading-screen');
+        if (loader) {
+          loader.style.opacity = '0';
+          loader.style.pointerEvents = 'none';
+          setTimeout(() => loader.classList.add('hidden'), 500);
+        }
+      }, 3000);
     });
   }
 };
