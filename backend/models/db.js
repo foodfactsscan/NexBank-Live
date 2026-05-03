@@ -16,8 +16,8 @@ async function connectDB() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 5000, // Very fast timeout
-      connectTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 30000, // Wait 30s for server selection
+      connectTimeoutMS: 30000,
     };
     
     if (!MONGODB_URI) {
