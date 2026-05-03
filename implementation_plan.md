@@ -131,21 +131,21 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 
 ### Phase 5 — UI/UX Overhaul
 
-- [ ] Premium dark theme with glassmorphism
-- [ ] Animated balance counter
-- [ ] Smooth page transitions
-- [ ] Micro-animations on all interactions
-- [ ] Chart.js for spending analytics
-- [ ] Lottie animations for success/failure states
-- [ ] Premium card design (3D flip animation)
+- [x] Premium dark theme with glassmorphism
+- [x] Animated balance counter
+- [x] Smooth page transitions
+- [x] Micro-animations on all interactions
+- [x] Chart.js for spending analytics
+- [x] Lottie animations for success/failure states
+- [x] Premium card design (3D flip animation)
 
 ---
 
 ### Phase 6 — Vercel Deployment Fix
 
-- [ ] Correct `vercel.json` for frontend + backend
-- [ ] Environment variable validation on startup
-- [ ] Graceful error handling for cold starts
+- [x] Correct `vercel.json` for frontend + backend
+- [x] Environment variable validation on startup
+- [x] Graceful error handling for cold starts
 
 ---
 

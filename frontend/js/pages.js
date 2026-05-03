@@ -48,7 +48,7 @@ const Pages = {
         <div class="grid-3 mb-20">
           <div class="balance-card">
             <div class="balance-label">Available Balance</div>
-            <div class="balance-amount"><span class="balance-currency">₹</span><span id="dash-bal">${acc.balance.toLocaleString('en-IN', {minimumFractionDigits:2})}</span></div>
+            <div class="balance-amount"><span class="balance-currency">₹</span><span id="dash-bal">0.00</span></div>
             <div class="balance-acc">A/C: ${acc.accountNumber} • ${acc.accountType.toUpperCase()}</div>
             <div style="height: 60px; margin-top: 10px; margin-bottom: -10px;">
               <canvas id="miniChart"></canvas>
@@ -149,47 +149,46 @@ const Pages = {
                 data: dataPoints,
                 borderColor: 'rgba(255, 255, 255, 0.8)',
                 borderWidth: 2,
+                pointRadius: 0,
                 tension: 0.4,
-                pointRadius: 0
+                fill: false
               }]
             },
             options: {
-              responsive: true,
-              maintainAspectRatio: false,
               plugins: { legend: { display: false }, tooltip: { enabled: false } },
               scales: { x: { display: false }, y: { display: false } },
-              layout: { padding: 0 }
+              maintainAspectRatio: false
             }
           });
         }
-        
-        // Donut Chart (Spending Insights)
+
+        // Donut Chart (Spending Breakdown)
         const ctxDonut = document.getElementById('donutChart');
         if (ctxDonut && Object.keys(summary.categoryBreakdown).length > 0) {
-          const labels = Object.keys(summary.categoryBreakdown);
-          const data = Object.values(summary.categoryBreakdown);
-          const colors = ['#ff4d4d', '#ffdf00', '#00d4ff', '#00fa9a', '#9b59b6', '#e67e22'];
           new Chart(ctxDonut, {
             type: 'doughnut',
             data: {
-              labels: labels,
+              labels: Object.keys(summary.categoryBreakdown),
               datasets: [{
-                data: data,
-                backgroundColor: colors.slice(0, labels.length),
+                data: Object.values(summary.categoryBreakdown),
+                backgroundColor: [
+                  '#00d4ff', '#0055ff', '#00fa9a', '#ff4d4d', '#ffdf00', '#7c3aed'
+                ],
                 borderWidth: 0,
-                hoverOffset: 4
+                hoverOffset: 10
               }]
             },
             options: {
-              responsive: true,
-              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
               cutout: '75%',
-              plugins: {
-                legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } }
-              }
+              maintainAspectRatio: false
             }
           });
         }
+      }
+
+      // Animate Balance
+      App.animateValue(document.getElementById('dash-bal'), 0, acc.balance, 1200);
       }
     } catch(err) {
       main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error loading dashboard: ${err.message}</p></div>`;
@@ -301,7 +300,7 @@ const Pages = {
 
           <div class="card hidden" id="transfer-step-3">
             <div class="empty-state" style="padding:20px">
-              <i class="fa fa-check-circle text-green" style="font-size:4rem; opacity:1"></i>
+              <lottie-player src="https://assets10.lottiefiles.com/packages/lf20_afwjh8re.json" background="transparent" speed="1" style="width: 120px; height: 120px; margin: 0 auto;" autoplay></lottie-player>
               <h2 class="mt-16 text-green">Transfer Successful!</h2>
               <p class="mt-8 mb-20 text-muted">Transaction Reference: <strong id="ts-ref">--</strong></p>
               

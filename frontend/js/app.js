@@ -355,6 +355,26 @@ const Auth = {
     });
     App.showAuth();
     App.toast('You have been logged out securely', 'info');
+  },
+
+  updateActivity() {
+    this.lastActivity = new Date().toISOString();
+  },
+
+  animateValue(obj, start, end, duration, isCurrency = true) {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      const val = progress * (end - start) + start;
+      obj.innerHTML = isCurrency 
+        ? val.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})
+        : Math.floor(val);
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
+    };
+    window.requestAnimationFrame(step);
   }
 };
 

@@ -8,6 +8,15 @@ const WebSocket = require('ws');
 const path = require('path');
 require('dotenv').config();
 
+// ENV Validation
+const requiredEnv = ['MONGODB_URI', 'JWT_SECRET'];
+requiredEnv.forEach(key => {
+  if (!process.env[key]) {
+    console.error(`❌ FATAL: Missing required environment variable: ${key}`);
+    process.exit(1);
+  }
+});
+
 const authRoutes = require('./routes/auth');
 const accountRoutes = require('./routes/accounts');
 const transactionRoutes = require('./routes/transactions');
