@@ -2,109 +2,60 @@ const mongoose = require('mongoose');
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-/**
- * Global is used here to maintain a cached connection across hot reloads
- * in development and across function invocations in serverless (Vercel).
- */
 let cached = global.mongoose;
-
 if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
 }
 
 async function connectDB() {
-  if (cached.conn) {
-    return cached.conn;
-  }
-
+  if (cached.conn) return cached.conn;
   if (!cached.promise) {
-    const opts = {
-      bufferCommands: false,
-      serverSelectionTimeoutMS: 10000, // 10 seconds timeout
-    };
-
-    if (!MONGODB_URI) {
-      throw new Error('❌ CRITICAL: MONGODB_URI is not defined in environment variables.');
-    }
-
-    console.log('⏳ Attempting to connect to MongoDB Atlas...');
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      console.log('✅ MongoDB Connected Successfully (Serverless Mode)');
-      return mongoose;
-    }).catch(err => {
-      cached.promise = null;
-      console.error('❌ MongoDB Connection Error:', err.message);
-      throw err;
-    });
+    const opts = { bufferCommands: false, serverSelectionTimeoutMS: 10000 };
+    if (!MONGODB_URI) throw new Error('MONGODB_URI missing');
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => mongoose);
   }
-
-  try {
-    cached.conn = await cached.promise;
-  } catch (e) {
-    cached.promise = null;
-    throw e;
-  }
-
+  cached.conn = await cached.promise;
   return cached.conn;
 }
 
 // ─── Schemas ─────────────────────────────────────────────────────────────────
 
 const userSchema = new mongoose.Schema({
-  firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
-  email: { type: String, required: true, unique: true, lowercase: true },
-  phone: { type: String, required: true, unique: true },
-  passwordHash: { type: String, required: true },
-  dateOfBirth: String,
-  address: String,
-  gender: String,
-  panNumber: String,
-  aadharNumber: String,
-  kycStatus: { type: String, default: 'pending' },
+  firstName: String, lastName: String, email: String, phone: String, passwordHash: String,
   role: { type: String, default: 'user' }
 }, { timestamps: true });
 
 const accountSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  accountType: { type: String, required: true },
-  accountName: String,
-  accountNumber: { type: String, required: true, unique: true },
-  balance: { type: Number, default: 1000 },
-  status: { type: String, default: 'active' }
+  userId: mongoose.Schema.Types.ObjectId, accountType: String, accountName: String,
+  accountNumber: String, balance: { type: Number, default: 1000 }, status: { type: String, default: 'active' }
 }, { timestamps: true });
 
 const transactionSchema = new mongoose.Schema({
-  fromAccountId: String,
-  toAccountId: String,
-  fromAccountNumber: String,
-  toAccountNumber: String,
-  amount: Number,
-  type: String,
-  description: String,
-  status: { type: String, default: 'completed' },
-  transactionId: { type: String, required: true, unique: true },
-  toAccountHolderName: String,
-  fromAccountHolderName: String
+  fromAccountId: String, toAccountId: String, fromAccountNumber: String, toAccountNumber: String,
+  amount: Number, type: String, description: String, transactionId: String,
+  toAccountHolderName: String, fromAccountHolderName: String
 }, { timestamps: true });
 
 const notificationSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  type: String,
-  title: String,
-  message: String,
-  read: { type: Boolean, default: false },
-  icon: String
+  userId: mongoose.Schema.Types.ObjectId, type: String, title: String, message: String, read: { type: Boolean, default: false }
+}, { timestamps: true });
+
+const beneficiarySchema = new mongoose.Schema({
+  userId: mongoose.Schema.Types.ObjectId, accountNumber: String, accountHolderName: String, nickname: String
+}, { timestamps: true });
+
+const fdSchema = new mongoose.Schema({
+  userId: mongoose.Schema.Types.ObjectId, accountId: mongoose.Schema.Types.ObjectId, principalAmount: Number,
+  interestRate: Number, tenureMonths: Number, maturityAmount: Number, maturityDate: Date, status: { type: String, default: 'active' },
+  fdNumber: String
 }, { timestamps: true });
 
 const cardSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  accountId: { type: mongoose.Schema.Types.ObjectId, ref: 'Account', required: true },
-  cardType: { type: String, default: 'debit' },
-  cardNumber: { type: String, required: true, unique: true },
-  cvv: { type: String, required: true },
-  expiryDate: { type: String, required: true },
-  status: { type: String, default: 'active' }
+  userId: mongoose.Schema.Types.ObjectId, accountId: mongoose.Schema.Types.ObjectId, cardNumber: String, cvv: String, expiryDate: String, status: { type: String, default: 'active' }
+}, { timestamps: true });
+
+const loanSchema = new mongoose.Schema({
+  userId: mongoose.Schema.Types.ObjectId, loanType: String, amount: Number, tenureMonths: Number, emi: Number, status: { type: String, default: 'under_review' }
 }, { timestamps: true });
 
 // ─── Models ──────────────────────────────────────────────────────────────────
@@ -113,13 +64,15 @@ const User = mongoose.models.User || mongoose.model('User', userSchema);
 const Account = mongoose.models.Account || mongoose.model('Account', accountSchema);
 const Transaction = mongoose.models.Transaction || mongoose.model('Transaction', transactionSchema);
 const Notification = mongoose.models.Notification || mongoose.model('Notification', notificationSchema);
+const Beneficiary = mongoose.models.Beneficiary || mongoose.model('Beneficiary', beneficiarySchema);
+const FixedDeposit = mongoose.models.FixedDeposit || mongoose.model('FixedDeposit', fdSchema);
 const Card = mongoose.models.Card || mongoose.model('Card', cardSchema);
+const Loan = mongoose.models.Loan || mongoose.model('Loan', loanSchema);
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 async function generateAccountNumber() {
-  let num;
-  let exists = true;
+  let num; let exists = true;
   while (exists) {
     num = Math.floor(1000000000 + Math.random() * 9000000000).toString();
     const check = await Account.findOne({ accountNumber: num });
@@ -129,10 +82,7 @@ async function generateAccountNumber() {
 }
 
 function generateTransactionId() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  const ts = Date.now().toString(36).toUpperCase();
-  const rand = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  return `NXB${ts}${rand}`;
+  return `NXB${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 }
 
 // ─── API Wrapper ─────────────────────────────────────────────────────────────
@@ -140,12 +90,12 @@ function generateTransactionId() {
 const Users = {
   findByEmail: async (email) => { await connectDB(); return await User.findOne({ email: email.toLowerCase() }); },
   findById: async (id) => { await connectDB(); return await User.findById(id); },
+  findByPhone: async (phone) => { await connectDB(); return await User.findOne({ phone }); },
   create: async (data) => {
     await connectDB();
-    const userCount = await User.countDocuments();
-    const role = (data.email === 'admin@nexbank.com' || userCount === 0) ? 'admin' : 'user';
-    const user = new User({ ...data, role });
-    return await user.save();
+    const count = await User.countDocuments();
+    const role = (data.email === 'admin@nexbank.com' || count === 0) ? 'admin' : 'user';
+    return await new User({ ...data, role }).save();
   },
   update: async (id, updates) => { await connectDB(); return await User.findByIdAndUpdate(id, updates, { new: true }); },
   getAll: async () => { await connectDB(); return await User.find(); }
@@ -154,44 +104,61 @@ const Users = {
 const Accounts = {
   findByUserId: async (userId) => { await connectDB(); return await Account.find({ userId }); },
   findByAccountNumber: async (num) => { await connectDB(); return await Account.findOne({ accountNumber: num }); },
+  findById: async (id) => { await connectDB(); return await Account.findById(id); },
   create: async (data) => {
     await connectDB();
     const accountNumber = await generateAccountNumber();
-    const account = new Account({ ...data, accountNumber });
-    return await account.save();
+    return await new Account({ ...data, accountNumber }).save();
   },
   updateBalance: async (id, amount) => {
     await connectDB();
-    const account = await Account.findById(id);
-    if (!account) return null;
-    account.balance = parseFloat((account.balance + amount).toFixed(2));
-    return await account.save();
-  }
+    const acc = await Account.findById(id);
+    if (!acc) return null;
+    acc.balance = parseFloat((acc.balance + amount).toFixed(2));
+    return await acc.save();
+  },
+  update: async (id, updates) => { await connectDB(); return await Account.findByIdAndUpdate(id, updates, { new: true }); },
+  getAll: async () => { await connectDB(); return await Account.find(); }
 };
 
 const Transactions = {
   findByAccountId: async (accountId) => { await connectDB(); return await Transaction.find({ $or: [{ fromAccountId: accountId }, { toAccountId: accountId }] }).sort({ createdAt: -1 }); },
-  create: async (data) => {
-    await connectDB();
-    const transactionId = generateTransactionId();
-    const txn = new Transaction({ ...data, transactionId });
-    return await txn.save();
-  },
+  create: async (data) => { await connectDB(); return await new Transaction({ ...data, transactionId: generateTransactionId() }).save(); },
   getAll: async () => { await connectDB(); return await Transaction.find().sort({ createdAt: -1 }); }
 };
 
 const Notifications = {
   findByUserId: async (userId) => { await connectDB(); return await Notification.find({ userId }).sort({ createdAt: -1 }); },
   create: async (data) => { await connectDB(); return await new Notification(data).save(); },
-  markRead: async (id, userId) => { await connectDB(); return await Notification.findOneAndUpdate({ _id: id, userId }, { read: true }, { new: true }); }
+  markRead: async (id, userId) => { await connectDB(); return await Notification.findOneAndUpdate({ _id: id, userId }, { read: true }, { new: true }); },
+  markAllRead: async (userId) => { await connectDB(); return await Notification.updateMany({ userId }, { read: true }); }
+};
+
+const Beneficiaries = {
+  findByUserId: async (userId) => { await connectDB(); return await Beneficiary.find({ userId }); },
+  create: async (data) => { await connectDB(); return await new Beneficiary(data).save(); },
+  delete: async (id, userId) => { await connectDB(); return await Beneficiary.deleteOne({ _id: id, userId }); }
+};
+
+const FixedDeposits = {
+  findByUserId: async (userId) => { await connectDB(); return await FixedDeposit.find({ userId }); },
+  create: async (data) => { await connectDB(); return await new FixedDeposit(data).save(); },
+  update: async (id, updates) => { await connectDB(); return await FixedDeposit.findByIdAndUpdate(id, updates, { new: true }); }
 };
 
 const Cards = {
   findByUserId: async (userId) => { await connectDB(); return await Card.find({ userId }); },
-  create: async (data) => { await connectDB(); return await new Card(data).save(); }
+  create: async (data) => { await connectDB(); return await new Card(data).save(); },
+  update: async (id, updates) => { await connectDB(); return await Card.findByIdAndUpdate(id, updates, { new: true }); }
+};
+
+const Loans = {
+  findByUserId: async (userId) => { await connectDB(); return await Loan.find({ userId }); },
+  create: async (data) => { await connectDB(); return await new Loan(data).save(); },
+  getAll: async () => { await connectDB(); return await Loan.find(); }
 };
 
 module.exports = { 
-  Users, Accounts, Transactions, Notifications, Cards, 
+  Users, Accounts, Transactions, Notifications, Beneficiaries, FixedDeposits, Cards, Loans,
   connectDB, generateTransactionId, mongoose 
 };
