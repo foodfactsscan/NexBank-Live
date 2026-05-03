@@ -23,7 +23,7 @@ const userRoutes = require('./routes/users');
 const notificationRoutes = require('./routes/notifications');
 const adminRoutes = require('./routes/admin');
 
-const { connectDB, mongoose } = require('./models/db');
+const { connectDB, mongoose, getLastError } = require('./models/db');
 
 // Connect to Database and pre-warm
 connectDB().then(() => console.log('🔥 Connection Warmed Up')).catch(err => console.error('Warmup failed', err));
@@ -106,6 +106,7 @@ app.get('/api/health', async (req, res) => {
   res.json({
     status: dbState === 1 ? 'OK' : 'Error',
     database: states[dbState],
+    error: getLastError(),
     env: missingEnv.length === 0 ? 'Loaded' : 'Missing Variables',
     timestamp: new Date()
   });

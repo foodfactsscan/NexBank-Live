@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const MONGODB_URI = process.env.MONGODB_URI;
 
 let cached = global.mongoose;
+let lastError = null;
 if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
 }
@@ -31,7 +32,8 @@ async function connectDB() {
         return m;
       })
       .catch(err => {
-        cached.promise = null; // Reset on failure
+        cached.promise = null; 
+        lastError = err.message;
         console.error('❌ Connection failed:', err.message);
         throw err;
       });
@@ -201,5 +203,5 @@ const Loans = {
 
 module.exports = { 
   Users, Accounts, Transactions, Notifications, Beneficiaries, FixedDeposits, Cards, Loans,
-  connectDB, generateTransactionId, mongoose 
+  connectDB, generateTransactionId, mongoose, getLastError: () => lastError
 };
