@@ -9,56 +9,81 @@ if (!cached) {
 
 async function connectDB() {
   if (cached.conn) return cached.conn;
+
   if (!cached.promise) {
-    const opts = { bufferCommands: false, serverSelectionTimeoutMS: 10000 };
-    if (!MONGODB_URI) throw new Error('MONGODB_URI missing');
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => mongoose);
+    const opts = {
+      bufferCommands: false,
+      serverSelectionTimeoutMS: 8000, // Faster timeout
+      heartbeatFrequencyMS: 2000,
+    };
+    
+    if (!MONGODB_URI) {
+      console.error('❌ MONGODB_URI is missing!');
+      throw new Error('MONGODB_URI missing');
+    }
+
+    console.log('⏳ Connecting to MongoDB...');
+    cached.promise = mongoose.connect(MONGODB_URI, opts)
+      .then((m) => {
+        console.log('✅ Connected');
+        return m;
+      })
+      .catch(err => {
+        cached.promise = null; // Reset on failure
+        console.error('❌ Connection failed:', err.message);
+        throw err;
+      });
   }
-  cached.conn = await cached.promise;
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
+  }
   return cached.conn;
 }
 
 // ─── Schemas ─────────────────────────────────────────────────────────────────
 
 const userSchema = new mongoose.Schema({
-  firstName: String, lastName: String, email: String, phone: String, passwordHash: String,
+  firstName: String, lastName: String, email: { type: String, unique: true }, 
+  phone: { type: String, unique: true }, passwordHash: String,
   dateOfBirth: String, address: String, gender: String, panNumber: String, aadharNumber: String,
   kycStatus: { type: String, default: 'pending' }, profilePicture: String,
-  role: { type: String, default: 'user' }
+  role: { type: String, default: 'user' }, lastLogin: Date
 }, { timestamps: true });
 
 const accountSchema = new mongoose.Schema({
-  userId: mongoose.Schema.Types.ObjectId, accountType: String, accountName: String,
-  accountNumber: String, balance: { type: Number, default: 1000 }, status: { type: String, default: 'active' },
-  ifscCode: { type: String, default: 'NEXB0001234' }, branch: { type: String, default: 'Digital Branch, Mumbai' }
+  userId: mongoose.Schema.Types.ObjectId, accountType: { type: String, default: 'savings' }, 
+  accountName: String, accountNumber: { type: String, unique: true }, 
+  balance: { type: Number, default: 1000 }, status: { type: String, default: 'active' },
+  ifscCode: { type: String, default: 'NEXB0001234' }, branch: { type: String, default: 'Digital Branch, Mumbai' },
+  currency: { type: String, default: 'INR' }, interestRate: { type: Number, default: 3.5 },
+  minimumBalance: { type: Number, default: 500 }, nomineeName: String
 }, { timestamps: true });
 
 const transactionSchema = new mongoose.Schema({
   fromAccountId: String, toAccountId: String, fromAccountNumber: String, toAccountNumber: String,
-  amount: Number, type: String, description: String, transactionId: String,
-  toAccountHolderName: String, fromAccountHolderName: String
-}, { timestamps: true });
-
-const notificationSchema = new mongoose.Schema({
-  userId: mongoose.Schema.Types.ObjectId, type: String, title: String, message: String, read: { type: Boolean, default: false }
-}, { timestamps: true });
-
-const beneficiarySchema = new mongoose.Schema({
-  userId: mongoose.Schema.Types.ObjectId, accountNumber: String, accountHolderName: String, nickname: String
-}, { timestamps: true });
-
-const fdSchema = new mongoose.Schema({
-  userId: mongoose.Schema.Types.ObjectId, accountId: mongoose.Schema.Types.ObjectId, principalAmount: Number,
-  interestRate: Number, tenureMonths: Number, maturityAmount: Number, maturityDate: Date, status: { type: String, default: 'active' },
-  fdNumber: String
+  amount: Number, type: String, category: String, description: String, 
+  status: { type: String, default: 'completed' }, transactionId: { type: String, unique: true },
+  toAccountHolderName: String, fromAccountHolderName: String, mode: { type: String, default: 'IMPS' }
 }, { timestamps: true });
 
 const cardSchema = new mongoose.Schema({
-  userId: mongoose.Schema.Types.ObjectId, accountId: mongoose.Schema.Types.ObjectId, cardNumber: String, cvv: String, expiryDate: String, status: { type: String, default: 'active' }
+  userId: mongoose.Schema.Types.ObjectId, accountId: mongoose.Schema.Types.ObjectId, 
+  cardNumber: { type: String, unique: true }, cvv: String, expiryDate: String, 
+  cardType: { type: String, default: 'debit' }, cardNetwork: { type: String, default: 'Visa' },
+  cardHolderName: String, status: { type: String, default: 'active' },
+  dailyLimit: { type: Number, default: 100000 }, internationalUsage: { type: Boolean, default: false },
+  contactlessEnabled: { type: Boolean, default: true }
 }, { timestamps: true });
 
-const loanSchema = new mongoose.Schema({
-  userId: mongoose.Schema.Types.ObjectId, loanType: String, amount: Number, tenureMonths: Number, emi: Number, status: { type: String, default: 'under_review' }
+const fdSchema = new mongoose.Schema({
+  userId: mongoose.Schema.Types.ObjectId, accountId: mongoose.Schema.Types.ObjectId, 
+  principalAmount: Number, interestRate: Number, tenureMonths: Number, 
+  maturityAmount: Number, maturityDate: Date, status: { type: String, default: 'active' },
+  fdNumber: { type: String, unique: true }
 }, { timestamps: true });
 
 // ─── Models ──────────────────────────────────────────────────────────────────
@@ -66,11 +91,21 @@ const loanSchema = new mongoose.Schema({
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 const Account = mongoose.models.Account || mongoose.model('Account', accountSchema);
 const Transaction = mongoose.models.Transaction || mongoose.model('Transaction', transactionSchema);
-const Notification = mongoose.models.Notification || mongoose.model('Notification', notificationSchema);
-const Beneficiary = mongoose.models.Beneficiary || mongoose.model('Beneficiary', beneficiarySchema);
-const FixedDeposit = mongoose.models.FixedDeposit || mongoose.model('FixedDeposit', fdSchema);
 const Card = mongoose.models.Card || mongoose.model('Card', cardSchema);
-const Loan = mongoose.models.Loan || mongoose.model('Loan', loanSchema);
+const FixedDeposit = mongoose.models.FixedDeposit || mongoose.model('FixedDeposit', fdSchema);
+const Notification = mongoose.models.Notification || mongoose.model('Notification', new mongoose.Schema({
+  userId: mongoose.Schema.Types.ObjectId, type: String, title: String, message: String, 
+  read: { type: Boolean, default: false }, icon: String
+}, { timestamps: true }));
+const Beneficiary = mongoose.models.Beneficiary || mongoose.model('Beneficiary', new mongoose.Schema({
+  userId: mongoose.Schema.Types.ObjectId, accountNumber: String, accountHolderName: String, nickname: String,
+  ifscCode: { type: String, default: 'NEXB0001234' }, bankName: { type: String, default: 'NexBank' }
+}, { timestamps: true }));
+const Loan = mongoose.models.Loan || mongoose.model('Loan', new mongoose.Schema({
+  userId: mongoose.Schema.Types.ObjectId, loanType: String, amount: Number, 
+  tenureMonths: Number, emi: Number, status: { type: String, default: 'under_review' },
+  interestRate: Number, monthlyIncome: Number
+}, { timestamps: true }));
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -96,7 +131,6 @@ const Users = {
   findByPhone: async (phone) => { await connectDB(); return await User.findOne({ phone }); },
   create: async (data) => {
     await connectDB();
-    // Only this specific email can be a Super Admin
     const role = (data.email.toLowerCase() === 'admin@nexbank.com') ? 'admin' : 'user';
     return await new User({ ...data, role }).save();
   },
@@ -120,16 +154,13 @@ const Accounts = {
     acc.balance = parseFloat((acc.balance + amount).toFixed(2));
     return await acc.save();
   },
-  update: async (id, updates) => { await connectDB(); return await Account.findByIdAndUpdate(id, updates, { new: true }); },
-  getAll: async () => { await connectDB(); return await Account.find(); }
+  update: async (id, updates) => { await connectDB(); return await Account.findByIdAndUpdate(id, updates, { new: true }); }
 };
 
 const Transactions = {
   findByAccountId: async (accountId, limit = 100) => { 
     await connectDB(); 
-    return await Transaction.find({ $or: [{ fromAccountId: accountId }, { toAccountId: accountId }] })
-      .sort({ createdAt: -1 })
-      .limit(limit); 
+    return await Transaction.find({ $or: [{ fromAccountId: accountId }, { toAccountId: accountId }] }).sort({ createdAt: -1 }).limit(limit); 
   },
   create: async (data) => { await connectDB(); return await new Transaction({ ...data, transactionId: generateTransactionId() }).save(); },
   getAll: async () => { await connectDB(); return await Transaction.find().sort({ createdAt: -1 }); }
