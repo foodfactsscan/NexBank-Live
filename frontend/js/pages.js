@@ -5,12 +5,19 @@ const Pages = {
     main.innerHTML = `<div class="empty-state"><i class="fa fa-spinner spin"></i><p>Loading dashboard...</p></div>`;
     try {
       const res = await Api.me();
-      const summaryRes = await Api.getSummary(res.accounts[0].id);
       const acc = res.accounts[0];
-      const { summary } = summaryRes;
+      
+      let summary = { monthlyIncome: 0, monthlyExpense: 0 };
+      try {
+        const summaryRes = await Api.getSummary(acc.id);
+        summary = summaryRes.summary;
+      } catch(e) { console.error('Summary load failed', e); }
 
-      const txnsRes = await Api.getTransactions(5);
-      const txns = txnsRes.transactions || [];
+      let txns = [];
+      try {
+        const txnsRes = await Api.getTransactions(5);
+        txns = txnsRes.transactions || [];
+      } catch(e) { console.error('Transactions load failed', e); }
 
       let txnsHtml = txns.length === 0 
         ? `<div class="empty-state" style="padding:20px"><p>No recent transactions</p></div>` 

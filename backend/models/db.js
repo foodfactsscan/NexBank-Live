@@ -29,7 +29,8 @@ const userSchema = new mongoose.Schema({
 
 const accountSchema = new mongoose.Schema({
   userId: mongoose.Schema.Types.ObjectId, accountType: String, accountName: String,
-  accountNumber: String, balance: { type: Number, default: 1000 }, status: { type: String, default: 'active' }
+  accountNumber: String, balance: { type: Number, default: 1000 }, status: { type: String, default: 'active' },
+  ifscCode: { type: String, default: 'NEXB0001234' }, branch: { type: String, default: 'Digital Branch, Mumbai' }
 }, { timestamps: true });
 
 const transactionSchema = new mongoose.Schema({
@@ -124,7 +125,12 @@ const Accounts = {
 };
 
 const Transactions = {
-  findByAccountId: async (accountId) => { await connectDB(); return await Transaction.find({ $or: [{ fromAccountId: accountId }, { toAccountId: accountId }] }).sort({ createdAt: -1 }); },
+  findByAccountId: async (accountId, limit = 100) => { 
+    await connectDB(); 
+    return await Transaction.find({ $or: [{ fromAccountId: accountId }, { toAccountId: accountId }] })
+      .sort({ createdAt: -1 })
+      .limit(limit); 
+  },
   create: async (data) => { await connectDB(); return await new Transaction({ ...data, transactionId: generateTransactionId() }).save(); },
   getAll: async () => { await connectDB(); return await Transaction.find().sort({ createdAt: -1 }); }
 };

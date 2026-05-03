@@ -75,6 +75,11 @@ const WS = {
   handlers: {},
 
   connect(accountId){
+    // WebSockets are not supported on Vercel Serverless. Disable to prevent hanging.
+    if (window.location.hostname.includes('vercel.app')) {
+      console.log('[WS] Real-time updates disabled on Vercel environment');
+      return;
+    }
     this.accountId = accountId;
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
     const url = `${proto}://${location.host}/ws`;
