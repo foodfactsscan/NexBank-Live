@@ -57,12 +57,6 @@ const App = {
     document.getElementById('sidebar-avatar').textContent = initials;
     document.getElementById('topbar-avatar').textContent = initials;
 
-    // Show/hide admin nav
-    const navAdmin = document.getElementById('nav-admin');
-    if (navAdmin) {
-      navAdmin.classList.toggle('hidden', this.user.role !== 'admin');
-    }
-
     this.navigate('dashboard');
     this.fetchNotificationsCount();
   },

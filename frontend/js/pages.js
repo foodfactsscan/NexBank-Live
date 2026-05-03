@@ -556,7 +556,7 @@ const Pages = {
     const name = document.getElementById('nominee-name').value;
     if (!name) return App.toast('Please enter nominee name', 'error');
     try {
-      await Api.put(\`/accounts/\${accId}/update\`, { nomineeName: name });
+      await Api.put(`/accounts/${accId}/update`, { nomineeName: name });
       App.toast('Nominee added successfully', 'success');
       App.closeModal();
       Pages.renderAccounts();
