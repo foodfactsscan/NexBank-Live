@@ -1,0 +1,172 @@
+{
+  "users": [
+    {
+      "firstName": "Q",
+      "lastName": "W",
+      "email": "hello@gmai.com",
+      "phone": "8989898989",
+      "passwordHash": "$2a$12$XPD0iMUj4iaZil6avrKisO.AShOHP1SFlbdX1Bk5bNt.z2xPYxDMO",
+      "dateOfBirth": "2000-01-01",
+      "address": "Mumbai",
+      "gender": "male",
+      "panNumber": null,
+      "aadharNumber": null,
+      "kycStatus": "pending",
+      "profilePicture": null,
+      "id": "cb55ae37-0a06-4b20-a94a-a41ba2d4ff3b",
+      "createdAt": "2026-05-03T11:08:42.872Z"
+    },
+    {
+      "firstName": "a",
+      "lastName": "b",
+      "email": "a@gmail.com",
+      "phone": "9999999999",
+      "passwordHash": "$2a$12$.HHroVEBtaMTXwuxacPC4ed3EJztZsnFI72b8IE/6ctO6q5csm3Iy",
+      "dateOfBirth": "2000-01-01",
+      "address": "mumbai",
+      "gender": "male",
+      "panNumber": null,
+      "aadharNumber": null,
+      "kycStatus": "pending",
+      "profilePicture": null,
+      "id": "8fb89778-bc05-46d6-a97f-f73eea7c0341",
+      "createdAt": "2026-05-03T11:27:00.089Z",
+      "lastLogin": "2026-05-03T11:37:41.738Z",
+      "updatedAt": "2026-05-03T11:37:41.739Z"
+    }
+  ],
+  "accounts": [
+    {
+      "userId": "cb55ae37-0a06-4b20-a94a-a41ba2d4ff3b",
+      "accountType": "savings",
+      "accountName": "Q W",
+      "balance": 0,
+      "currency": "INR",
+      "interestRate": 3.5,
+      "minimumBalance": 500,
+      "ifscCode": "NEXB0001234",
+      "branch": "Main Branch",
+      "nomineeName": null,
+      "id": "e38e51c0-d991-4acd-8ef5-19aa18028897",
+      "accountNumber": "4045566021",
+      "status": "active",
+      "createdAt": "2026-05-03T11:08:42.884Z",
+      "updatedAt": "2026-05-03T11:16:39.527Z"
+    },
+    {
+      "userId": "8fb89778-bc05-46d6-a97f-f73eea7c0341",
+      "accountType": "savings",
+      "accountName": "a b",
+      "balance": 1000,
+      "currency": "INR",
+      "interestRate": 3.5,
+      "minimumBalance": 500,
+      "ifscCode": "NEXB0001234",
+      "branch": "Main Branch",
+      "nomineeName": null,
+      "id": "a585426d-6098-4344-bf6e-7e33923a14ba",
+      "accountNumber": "2298715733",
+      "status": "active",
+      "createdAt": "2026-05-03T11:27:00.093Z"
+    }
+  ],
+  "transactions": [
+    {
+      "fromAccountId": "e38e51c0-d991-4acd-8ef5-19aa18028897",
+      "toAccountId": "FD_ACCOUNT",
+      "amount": 1000,
+      "type": "fd_creation",
+      "category": "Investment",
+      "description": "Fixed Deposit Created - 12 months",
+      "mode": "internal",
+      "id": "9e8a41b3-889c-4c54-95db-e7e12b124997",
+      "transactionId": "NXBMOPODW522BSSZM",
+      "status": "completed",
+      "createdAt": "2026-05-03T11:16:39.543Z"
+    }
+  ],
+  "notifications": [
+    {
+      "userId": "cb55ae37-0a06-4b20-a94a-a41ba2d4ff3b",
+      "type": "welcome",
+      "title": "Welcome to NexBank! 🎉",
+      "message": "Hello Q! Your account has been created successfully. Your Account Number is 4045566021. We've added ₹1,000 as a welcome bonus!",
+      "icon": "gift",
+      "id": "7863885f-fce2-4a46-ae0e-a5eb659e0b68",
+      "read": false,
+      "createdAt": "2026-05-03T11:08:42.892Z"
+    },
+    {
+      "userId": "cb55ae37-0a06-4b20-a94a-a41ba2d4ff3b",
+      "type": "fd",
+      "title": "Fixed Deposit Created",
+      "message": "Your FD of ₹1,000 has been created. Matures on 3/5/2027.",
+      "icon": "trending-up",
+      "id": "7de893ff-21a6-490a-ab72-cd6be9ba8756",
+      "read": false,
+      "createdAt": "2026-05-03T11:16:39.667Z"
+    },
+    {
+      "userId": "8fb89778-bc05-46d6-a97f-f73eea7c0341",
+      "type": "welcome",
+      "title": "Welcome to NexBank! 🎉",
+      "message": "Hello a! Your account has been created successfully. Your Account Number is 2298715733. We've added ₹1,000 as a welcome bonus!",
+      "icon": "gift",
+      "id": "d2ea826e-aa14-4a51-815e-eafd369ceacc",
+      "read": false,
+      "createdAt": "2026-05-03T11:27:00.098Z"
+    }
+  ],
+  "beneficiaries": [],
+  "fixedDeposits": [
+    {
+      "userId": "cb55ae37-0a06-4b20-a94a-a41ba2d4ff3b",
+      "accountId": "e38e51c0-d991-4acd-8ef5-19aa18028897",
+      "principalAmount": 1000,
+      "interestRate": 6.5,
+      "tenureMonths": 12,
+      "maturityAmount": 1066.6,
+      "maturityDate": "2027-05-03T11:16:39.532Z",
+      "status": "active",
+      "fdNumber": "FD1777806999532",
+      "id": "0eae871a-3a1d-4da9-9c06-bd07745696b9",
+      "createdAt": "2026-05-03T11:16:39.536Z"
+    }
+  ],
+  "recurringDeposits": [],
+  "loans": [],
+  "cards": [
+    {
+      "userId": "cb55ae37-0a06-4b20-a94a-a41ba2d4ff3b",
+      "accountId": "e38e51c0-d991-4acd-8ef5-19aa18028897",
+      "cardType": "debit",
+      "cardNetwork": "Visa",
+      "cardNumber": "5635 5551 1312 2986",
+      "cvv": "581",
+      "expiryDate": "05/31",
+      "cardHolderName": "Q W",
+      "status": "active",
+      "dailyLimit": 100000,
+      "internationalUsage": false,
+      "contactlessEnabled": true,
+      "id": "bd70e646-80e2-4455-8e43-7566287c3ab2",
+      "createdAt": "2026-05-03T11:08:42.889Z"
+    },
+    {
+      "userId": "8fb89778-bc05-46d6-a97f-f73eea7c0341",
+      "accountId": "a585426d-6098-4344-bf6e-7e33923a14ba",
+      "cardType": "debit",
+      "cardNetwork": "Visa",
+      "cardNumber": "3200 7813 8951 3588",
+      "cvv": "251",
+      "expiryDate": "05/31",
+      "cardHolderName": "A B",
+      "status": "active",
+      "dailyLimit": 100000,
+      "internationalUsage": false,
+      "contactlessEnabled": true,
+      "id": "b814ded7-5483-46dd-80f1-1fc3c5416bdb",
+      "createdAt": "2026-05-03T11:27:00.096Z"
+    }
+  ]
+}

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <meta name="description" content="NexBank — Your trusted digital banking partner. Instant transfers, real-time balance, fixed deposits, loans and more."/>
+  <meta name="theme-color" content="#0a1628"/>
+  <title>NexBank — Smart Digital Banking</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loading-screen" class="loading-screen">
+    <div class="loader-content">
+      <div class="loader-logo"><span class="logo-icon">N</span><span class="logo-text">exBank</span></div>
+      <div class="loader-bar"><div class="loader-fill"></div></div>
+      <p class="loader-msg">Securing your session…</p>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- App Root -->
+  <div id="app" class="app hidden">
+
+    <!-- ── AUTH PAGES ───────────────────────────────── -->
+    <div id="page-auth" class="page-auth">
+      <div class="auth-bg">
+        <div class="auth-orb orb1"></div>
+        <div class="auth-orb orb2"></div>
+        <div class="auth-orb orb3"></div>
+      </div>
+      <div class="auth-left">
+        <div class="auth-brand">
+          <div class="brand-icon">N</div>
+          <span>NexBank</span>
+        </div>
+        <div class="auth-hero">
+          <h1>Banking That Works At The Speed Of Life</h1>
+          <p>Instant transfers · Real-time balance · Smart analytics · 24/7 support</p>
+          <div class="auth-stats">
+            <div class="stat"><span class="stat-val">10M+</span><span class="stat-label">Customers</span></div>
+            <div class="stat"><span class="stat-val">₹2T+</span><span class="stat-label">Transferred</span></div>
+            <div class="stat"><span class="stat-val">99.9%</span><span class="stat-label">Uptime</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="auth-right">
+        <div class="auth-card">
+          <!-- Tabs -->
+          <div class="auth-tabs">
+            <button class="auth-tab active" id="tab-login" onclick="App.showLogin()">Login</button>
+            <button class="auth-tab" id="tab-register" onclick="App.showRegister()">Open Account</button>
+          </div>
+
+          <!-- Login Form -->
+          <div id="form-login" class="auth-form">
+            <h2>Welcome Back</h2>
+            <p class="form-sub">Sign in to your NexBank account</p>
+            <div class="input-group">
+              <i class="fa fa-envelope"></i>
+              <input type="email" id="login-email" placeholder="Email address" autocomplete="email"/>
+            </div>
+            <div class="input-group">
+              <i class="fa fa-lock"></i>
+              <input type="password" id="login-password" placeholder="Password" autocomplete="current-password"/>
+              <button class="eye-btn" onclick="App.togglePwd('login-password',this)"><i class="fa fa-eye"></i></button>
+            </div>
+            <div class="form-row">
+              <label class="checkbox-label"><input type="checkbox" id="remember-me"/> Remember me</label>
+              <a href="#" class="link-sm" onclick="App.showForgotPwd()">Forgot password?</a>
+            </div>
+            <button class="btn-primary" id="btn-login" onclick="Auth.login()">
+              <span>Login Securely</span><i class="fa fa-arrow-right"></i>
+            </button>
+            <div class="auth-divider"><span>or login with Account Number</span></div>
+            <div class="input-group">
+              <i class="fa fa-hashtag"></i>
+              <input type="text" id="login-accnum" placeholder="10-digit Account Number" maxlength="10"/>
+            </div>
+            <button class="btn-outline" onclick="Auth.loginWithAccount()">Login with Account Number</button>
+          </div>
+
+          <!-- Register Form -->
+          <div id="form-register" class="auth-form hidden">
+            <h2>Open Free Account</h2>
+            <p class="form-sub">Join millions of NexBank customers</p>
+            <div class="form-row-2">
+              <div class="input-group">
+                <i class="fa fa-user"></i>
+                <input type="text" id="reg-fname" placeholder="First Name"/>
+              </div>
+              <div class="input-group">
+                <i class="fa fa-user"></i>
+                <input type="text" id="reg-lname" placeholder="Last Name"/>
+              </div>
+            </div>
+            <div class="input-group">
+              <i class="fa fa-envelope"></i>
+              <input type="email" id="reg-email" placeholder="Email address"/>
+            </div>
+            <div class="input-group">
+              <i class="fa fa-phone"></i>
+              <input type="tel" id="reg-phone" placeholder="Mobile Number (10 digits)" maxlength="10"/>
+            </div>
+            <div class="input-group">
+              <i class="fa fa-calendar"></i>
+              <input type="date" id="reg-dob" placeholder="Date of Birth"/>
+            </div>
+            <div class="input-group">
+              <i class="fa fa-venus-mars"></i>
+              <select id="reg-gender">
+                <option value="">Select Gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <i class="fa fa-map-marker-alt"></i>
+              <input type="text" id="reg-address" placeholder="Full Address"/>
+            </div>
+            <div class="input-group">
+              <i class="fa fa-id-card"></i>
+              <input type="text" id="reg-pan" placeholder="PAN Number (optional)" maxlength="10" style="text-transform:uppercase"/>
+            </div>
+            <div class="input-group">
+              <i class="fa fa-lock"></i>
+              <input type="password" id="reg-password" placeholder="Create Password (min 8 chars)"/>
+              <button class="eye-btn" onclick="App.togglePwd('reg-password',this)"><i class="fa fa-eye"></i></button>
+            </div>
+            <div class="input-group">
+              <i class="fa fa-lock"></i>
+              <input type="password" id="reg-cpassword" placeholder="Confirm Password"/>
+            </div>
+            <label class="checkbox-label terms">
+              <input type="checkbox" id="reg-terms"/>
+              I agree to the <a href="javascript:void(0)" class="link-sm" onclick="App.openModal('terms')">Terms & Conditions</a> and <a href="javascript:void(0)" class="link-sm" onclick="App.openModal('privacy')">Privacy Policy</a>
+            </label>
+            <button class="btn-primary" id="btn-register" onclick="Auth.register()">
+              <span>Create Account</span><i class="fa fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MAIN APP (post-login) ─────────────────────── -->
+    <div id="page-main" class="page-main hidden">
+
+      <!-- Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-brand">
+            <div class="brand-icon sm">N</div>
+            <span>NexBank</span>
+          </div>
+          <button class="sidebar-close" onclick="App.closeSidebar()"><i class="fa fa-times"></i></button>
+        </div>
+        <div class="sidebar-user">
+          <div class="avatar" id="sidebar-avatar">U</div>
+          <div>
+            <div class="user-name" id="sidebar-name">User</div>
+            <div class="user-acc" id="sidebar-acc">A/C: —</div>
+          </div>
+        </div>
+        <nav class="sidebar-nav">
+          <a href="#" class="nav-item active" data-page="dashboard" onclick="App.navigate('dashboard')">
+            <i class="fa fa-th-large"></i><span>Dashboard</span>
+          </a>
+          <a href="#" class="nav-item" data-page="transfer" onclick="App.navigate('transfer')">
+            <i class="fa fa-paper-plane"></i><span>Send Money</span>
+          </a>
+          <a href="#" class="nav-item" data-page="transactions" onclick="App.navigate('transactions')">
+            <i class="fa fa-list-alt"></i><span>Transactions</span>
+          </a>
+          <a href="#" class="nav-item" data-page="accounts" onclick="App.navigate('accounts')">
+            <i class="fa fa-university"></i><span>Accounts</span>
+          </a>
+          <a href="#" class="nav-item" data-page="cards" onclick="App.navigate('cards')">
+            <i class="fa fa-credit-card"></i><span>Cards</span>
+          </a>
+          <a href="#" class="nav-item" data-page="investments" onclick="App.navigate('investments')">
+            <i class="fa fa-chart-line"></i><span>Investments & FD</span>
+          </a>
+          <a href="#" class="nav-item" data-page="loans" onclick="App.navigate('loans')">
+            <i class="fa fa-hand-holding-usd"></i><span>Loans</span>
+          </a>
+          <a href="#" class="nav-item" data-page="beneficiaries" onclick="App.navigate('beneficiaries')">
+            <i class="fa fa-users"></i><span>Beneficiaries</span>
+          </a>
+          <a href="#" class="nav-item" data-page="calculators" onclick="App.navigate('calculators')">
+            <i class="fa fa-calculator"></i><span>Calculators</span>
+          </a>
+          <a href="#" class="nav-item hidden" id="nav-admin" data-page="admin" onclick="App.navigate('admin')">
+            <i class="fa fa-shield-alt text-gold"></i><span style="color:var(--gold); font-weight:700">Admin Panel</span>
+          </a>
+          <a href="#" class="nav-item" data-page="profile" onclick="App.navigate('profile')">
+            <i class="fa fa-user-circle"></i><span>Profile</span>
+          </a>
+          <a href="#" class="nav-item" data-page="support" onclick="App.navigate('support')">
+            <i class="fa fa-headset"></i><span>Support</span>
+          </a>
+        </nav>
+        <div class="sidebar-footer">
+          <button class="nav-item logout-btn" onclick="Auth.logout()">
+            <i class="fa fa-sign-out-alt"></i><span>Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Overlay -->
+      <div class="sidebar-overlay" id="sidebar-overlay" onclick="App.closeSidebar()"></div>
+
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- Topbar -->
+        <header class="topbar">
+          <div class="topbar-left">
+            <button class="hamburger" onclick="App.openSidebar()"><i class="fa fa-bars"></i></button>
+            <div class="page-title" id="page-title">Dashboard</div>
+          </div>
+          <div class="topbar-right">
+            <div class="ws-badge" id="ws-badge" title="Real-time connected"><i class="fa fa-circle"></i></div>
+            <button class="icon-btn" onclick="App.navigate('notifications')" id="notif-btn">
+              <i class="fa fa-bell"></i>
+              <span class="badge hidden" id="notif-badge">0</span>
+            </button>
+            <button class="avatar-btn" onclick="App.navigate('profile')" id="topbar-avatar">U</button>
+          </div>
+        </header>
+
+        <!-- Page Views -->
+        <main class="page-content">
+          <div id="view-dashboard" class="view active"></div>
+          <div id="view-transfer" class="view hidden"></div>
+          <div id="view-transactions" class="view hidden"></div>
+          <div id="view-accounts" class="view hidden"></div>
+          <div id="view-cards" class="view hidden"></div>
+          <div id="view-investments" class="view hidden"></div>
+          <div id="view-loans" class="view hidden"></div>
+          <div id="view-beneficiaries" class="view hidden"></div>
+          <div id="view-calculators" class="view hidden"></div>
+          <div id="view-profile" class="view hidden"></div>
+          <div id="view-support" class="view hidden"></div>
+          <div id="view-notifications" class="view hidden"></div>
+          <div id="view-admin" class="view hidden"></div>
+        </main>
+      </div>
+    </div><!-- /page-main -->
+
+  </div><!-- /app -->
+
+  <!-- Modal -->
+  <div id="modal-overlay" class="modal-overlay hidden" onclick="App.closeModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="App.closeModal()"><i class="fa fa-times"></i></button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/pages.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
