@@ -5,9 +5,10 @@ const Pages = {
     main.innerHTML = `<div class="empty-state"><i class="fa fa-spinner spin"></i><p>Loading dashboard...</p></div>`;
     try {
       const res = await Api.me();
-      const acc = res.accounts[0];
+      const accounts = res.accounts;
+      const acc = accounts[0];
       
-      let summary = { monthlyIncome: 0, monthlyExpense: 0 };
+      let summary = { monthlyIncome: 0, monthlyExpense: 0, categoryBreakdown: {}, monthlyData: [] };
       try {
         const summaryRes = await Api.getSummary(acc.id);
         summary = summaryRes.summary;
@@ -25,10 +26,10 @@ const Pages = {
             const isCredit = t.toAccountId === acc.id;
             const icon = isCredit ? 'arrow-down credit' : 'arrow-up debit';
             const sign = isCredit ? '+' : '-';
-            const color = isCredit ? 'credit' : 'debit';
+            const color = isCredit ? 'text-green' : 'text-red';
             return `
               <div class="txn-item">
-                <div class="txn-icon ${color}"><i class="fa fa-${icon}"></i></div>
+                <div class="txn-icon ${isCredit?'credit':'debit'}"><i class="fa fa-${icon}"></i></div>
                 <div class="txn-info">
                   <div class="txn-name">${t.description || t.category}</div>
                   <div class="txn-date">${new Date(t.createdAt).toLocaleString()}</div>
@@ -49,25 +50,39 @@ const Pages = {
             <div class="balance-label">Available Balance</div>
             <div class="balance-amount"><span class="balance-currency">₹</span><span id="dash-bal">${acc.balance.toLocaleString('en-IN', {minimumFractionDigits:2})}</span></div>
             <div class="balance-acc">A/C: ${acc.accountNumber} • ${acc.accountType.toUpperCase()}</div>
-            <div class="balance-actions">
+            <div style="height: 60px; margin-top: 10px; margin-bottom: -10px;">
+              <canvas id="miniChart"></canvas>
+            </div>
+            <div class="balance-actions mt-16">
               <button class="bal-btn" onclick="App.navigate('transfer')"><i class="fa fa-paper-plane"></i> Send</button>
               <button class="bal-btn" onclick="App.navigate('transactions')"><i class="fa fa-list"></i> Statement</button>
             </div>
           </div>
           
-          <div class="stat-widget">
-            <div class="stat-icon green"><i class="fa fa-arrow-down"></i></div>
-            <div class="stat-info">
-              <div class="stat-lbl">Income This Month</div>
-              <div class="stat-val">₹${summary.monthlyIncome.toLocaleString('en-IN', {minimumFractionDigits:2})}</div>
+          <div class="card" style="padding: 24px;">
+            <div class="form-section-title mb-16"><i class="fa fa-chart-pie"></i> Spending Insights</div>
+            <div style="height: 180px; display: flex; justify-content: center; align-items: center;">
+              ${Object.keys(summary.categoryBreakdown).length > 0 
+                ? '<canvas id="donutChart"></canvas>' 
+                : '<div class="text-muted text-sm text-center">No spending data this month</div>'}
             </div>
           </div>
           
-          <div class="stat-widget">
-            <div class="stat-icon red"><i class="fa fa-arrow-up"></i></div>
-            <div class="stat-info">
-              <div class="stat-lbl">Spends This Month</div>
-              <div class="stat-val">₹${summary.monthlyExpense.toLocaleString('en-IN', {minimumFractionDigits:2})}</div>
+          <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div class="stat-widget" style="flex: 1">
+              <div class="stat-icon green"><i class="fa fa-arrow-down"></i></div>
+              <div class="stat-info">
+                <div class="stat-lbl">Income This Month</div>
+                <div class="stat-val">₹${summary.monthlyIncome.toLocaleString('en-IN', {minimumFractionDigits:2})}</div>
+              </div>
+            </div>
+            
+            <div class="stat-widget" style="flex: 1">
+              <div class="stat-icon red"><i class="fa fa-arrow-up"></i></div>
+              <div class="stat-info">
+                <div class="stat-lbl">Spends This Month</div>
+                <div class="stat-val">₹${summary.monthlyExpense.toLocaleString('en-IN', {minimumFractionDigits:2})}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -77,17 +92,30 @@ const Pages = {
             <div class="form-section-title"><i class="fa fa-bolt"></i> Quick Actions</div>
             <div class="quick-actions">
               <div class="quick-btn" onclick="App.navigate('transfer')">
-                <i class="fa fa-exchange-alt"></i><span>Transfer</span>
+                <i class="fa fa-paper-plane"></i><span>Send</span>
+              </div>
+              <div class="quick-btn" onclick="App.toast('Feature locked in demo', 'info')">
+                <i class="fa fa-file-invoice-dollar"></i><span>Pay Bills</span>
               </div>
               <div class="quick-btn" onclick="App.navigate('investments')">
-                <i class="fa fa-chart-pie"></i><span>Open FD</span>
-              </div>
-              <div class="quick-btn" onclick="App.navigate('cards')">
-                <i class="fa fa-credit-card"></i><span>Cards</span>
+                <i class="fa fa-chart-line"></i><span>Invest</span>
               </div>
               <div class="quick-btn" onclick="App.navigate('loans')">
                 <i class="fa fa-hand-holding-usd"></i><span>Loans</span>
               </div>
+            </div>
+            
+            <div class="form-section-title mt-24 mb-16"><i class="fa fa-link"></i> Linked Accounts</div>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              ${accounts.map(a => `
+                <div style="padding:12px 16px; border:1px solid var(--border); border-radius:12px; display:flex; justify-content:space-between; align-items:center;">
+                  <div>
+                    <div style="font-weight:600; font-size:0.9rem;">${a.accountType.toUpperCase()} A/C</div>
+                    <div style="font-size:0.8rem; color:var(--text-muted)">${a.accountNumber}</div>
+                  </div>
+                  <div style="font-family:var(--font2); font-weight:700; color:var(--accent);">₹${a.balance.toLocaleString('en-IN')}</div>
+                </div>
+              `).join('')}
             </div>
           </div>
 
@@ -102,6 +130,67 @@ const Pages = {
           </div>
         </div>
       `;
+      
+      // Render charts if Chart is available
+      if (typeof Chart !== 'undefined') {
+        Chart.defaults.color = '#8ba3c2';
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        
+        // Mini Chart (Balance/History trend)
+        const ctxMini = document.getElementById('miniChart');
+        if (ctxMini && summary.monthlyData && summary.monthlyData.length > 0) {
+          const labels = summary.monthlyData.map(d => d.month).reverse();
+          const dataPoints = summary.monthlyData.map(d => d.credit).reverse();
+          new Chart(ctxMini, {
+            type: 'line',
+            data: {
+              labels: labels,
+              datasets: [{
+                data: dataPoints,
+                borderColor: 'rgba(255, 255, 255, 0.8)',
+                borderWidth: 2,
+                tension: 0.4,
+                pointRadius: 0
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false }, tooltip: { enabled: false } },
+              scales: { x: { display: false }, y: { display: false } },
+              layout: { padding: 0 }
+            }
+          });
+        }
+        
+        // Donut Chart (Spending Insights)
+        const ctxDonut = document.getElementById('donutChart');
+        if (ctxDonut && Object.keys(summary.categoryBreakdown).length > 0) {
+          const labels = Object.keys(summary.categoryBreakdown);
+          const data = Object.values(summary.categoryBreakdown);
+          const colors = ['#ff4d4d', '#ffdf00', '#00d4ff', '#00fa9a', '#9b59b6', '#e67e22'];
+          new Chart(ctxDonut, {
+            type: 'doughnut',
+            data: {
+              labels: labels,
+              datasets: [{
+                data: data,
+                backgroundColor: colors.slice(0, labels.length),
+                borderWidth: 0,
+                hoverOffset: 4
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              cutout: '75%',
+              plugins: {
+                legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } }
+              }
+            }
+          });
+        }
+      }
     } catch(err) {
       main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error loading dashboard: ${err.message}</p></div>`;
     }
@@ -839,11 +928,11 @@ const Pages = {
       main.innerHTML = `
         <div class="section-title"><i class="fa fa-shield-alt text-gold"></i> Admin Control Panel</div>
         
-        <div class="grid-4 mb-24">
-          <div class="stat-widget" style="padding:16px">
+        <div class="grid-4 mb-20">
+          <div class="stat-widget" style="padding:16px; background:linear-gradient(135deg, rgba(0,212,255,0.1), rgba(0,85,255,0.1))">
             <div class="stat-info">
-              <div class="stat-lbl">Total Bank Balance</div>
-              <div class="stat-val text-accent" style="font-size:1.1rem">₹${statsRes.totalBalance.toLocaleString('en-IN')}</div>
+              <div class="stat-lbl">System Health</div>
+              <div class="stat-val text-green" style="font-size:1.1rem"><i class="fa fa-check-circle"></i> 100% Online</div>
             </div>
           </div>
           <div class="stat-widget" style="padding:16px">
@@ -860,14 +949,14 @@ const Pages = {
           </div>
           <div class="stat-widget" style="padding:16px">
             <div class="stat-info">
-              <div class="stat-lbl">Total Transactions</div>
-              <div class="stat-val" style="font-size:1.1rem">${statsRes.totalTransactions}</div>
+              <div class="stat-lbl">Txns Today</div>
+              <div class="stat-val text-accent" style="font-size:1.1rem">${statsRes.totalTransactions}</div>
             </div>
           </div>
         </div>
 
         <div class="card" style="padding:0; overflow:hidden">
-          <div class="form-section-title" style="padding:24px 24px 0 24px"><i class="fa fa-users"></i> Manage Users</div>
+          <div class="form-section-title" style="padding:24px 24px 0 24px"><i class="fa fa-users"></i> All Users Overview</div>
           <div style="overflow-x:auto">
             <table class="data-table">
               <thead>

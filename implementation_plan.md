@@ -39,12 +39,12 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 - [ ] Device/session management
 
 **Dashboard**
-- [ ] Real balance card with mini chart
-- [ ] Income vs Expense this month
-- [ ] 5 most recent transactions
-- [ ] Quick action buttons (Send, Pay Bills, Invest, Loans)
-- [ ] Spending insights donut chart
-- [ ] Linked accounts overview
+- [x] Real balance card with mini chart
+- [x] Income vs Expense this month
+- [x] 5 most recent transactions
+- [x] Quick action buttons (Send, Pay Bills, Invest, Loans)
+- [x] Spending insights donut chart
+- [x] Linked accounts overview
 
 **Money Transfer**
 - [ ] IMPS / NEFT / RTGS with correct limits
@@ -113,11 +113,11 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 - [ ] Chat widget (UI)
 
 **Admin Panel** (separate, admin@nexbank.com only)
-- [ ] All users overview
-- [ ] Total transactions today
-- [ ] Block/unblock users
+- [x] All users overview
+- [x] Total transactions today
+- [x] Block/unblock users
 - [ ] KYC approval
-- [ ] System health
+- [x] System health
 
 ---
 
