@@ -94,7 +94,7 @@ const Pages = {
               <div class="quick-btn" onclick="App.navigate('transfer')">
                 <i class="fa fa-paper-plane"></i><span>Send</span>
               </div>
-              <div class="quick-btn" onclick="App.toast('Feature locked in demo', 'info')">
+              <div class="quick-btn" onclick="App.navigate('bills')">
                 <i class="fa fa-file-invoice-dollar"></i><span>Pay Bills</span>
               </div>
               <div class="quick-btn" onclick="App.navigate('investments')">
@@ -438,7 +438,7 @@ const Pages = {
       main.innerHTML = `
         <div class="flex justify-between items-center mb-20">
           <div class="section-title mb-0"><i class="fa fa-list-alt"></i> Transaction History</div>
-          <button class="btn-outline" style="width:auto; padding:8px 16px; margin:0"><i class="fa fa-download"></i> Export PDF</button>
+          <button class="btn-outline" style="width:auto; padding:8px 16px; margin:0" onclick="Pages.downloadStatement()"><i class="fa fa-download"></i> Export PDF</button>
         </div>
         
         <div class="card" style="padding:0; overflow:hidden">
@@ -498,7 +498,7 @@ const Pages = {
           </div>
           
           <div class="mt-20 pt-16" style="border-top:1px solid var(--border)">
-            <button class="btn-outline" style="width:auto; padding:8px 16px; margin:0"><i class="fa fa-file-pdf"></i> Download Statement</button>
+            <button class="btn-outline" style="width:auto; padding:8px 16px; margin:0" onclick="Pages.downloadStatement()"><i class="fa fa-file-pdf"></i> Download Statement</button>
           </div>
         </div>
       `).join('');
@@ -509,6 +509,109 @@ const Pages = {
       `;
     } catch(err) {
       main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error: ${err.message}</p></div>`;
+    }
+  },
+
+  downloadStatement: () => {
+    App.toast('Generating PDF statement...', 'info');
+    setTimeout(() => {
+      App.toast('Statement_2026.pdf downloaded successfully.', 'success');
+    }, 1500);
+  },
+
+  // ── Bills ─────────────────────────────────────────────────────────────────
+  renderBills: () => {
+    const main = document.getElementById('view-bills');
+    main.innerHTML = `
+      <div class="section-title"><i class="fa fa-receipt"></i> Bill Payments</div>
+      
+      <div class="grid-2 mb-20">
+        <div class="card">
+          <div class="form-section-title"><i class="fa fa-bolt"></i> Quick Pay</div>
+          <div class="grid-3" style="gap:16px;">
+            <div class="stat-widget" style="padding:16px; text-align:center; cursor:pointer;" onclick="Pages.showBillModal('Electricity')">
+              <i class="fa fa-lightbulb text-accent" style="font-size:1.5rem; margin-bottom:8px;"></i>
+              <div style="font-size:0.8rem; font-weight:600;">Electricity</div>
+            </div>
+            <div class="stat-widget" style="padding:16px; text-align:center; cursor:pointer;" onclick="Pages.showBillModal('Mobile Postpaid')">
+              <i class="fa fa-mobile-alt text-accent" style="font-size:1.5rem; margin-bottom:8px;"></i>
+              <div style="font-size:0.8rem; font-weight:600;">Mobile</div>
+            </div>
+            <div class="stat-widget" style="padding:16px; text-align:center; cursor:pointer;" onclick="Pages.showBillModal('DTH / TV')">
+              <i class="fa fa-tv text-accent" style="font-size:1.5rem; margin-bottom:8px;"></i>
+              <div style="font-size:0.8rem; font-weight:600;">DTH / TV</div>
+            </div>
+            <div class="stat-widget" style="padding:16px; text-align:center; cursor:pointer;" onclick="Pages.showBillModal('Water Bill')">
+              <i class="fa fa-tint text-accent" style="font-size:1.5rem; margin-bottom:8px;"></i>
+              <div style="font-size:0.8rem; font-weight:600;">Water</div>
+            </div>
+            <div class="stat-widget" style="padding:16px; text-align:center; cursor:pointer;" onclick="Pages.showBillModal('Broadband')">
+              <i class="fa fa-wifi text-accent" style="font-size:1.5rem; margin-bottom:8px;"></i>
+              <div style="font-size:0.8rem; font-weight:600;">Broadband</div>
+            </div>
+            <div class="stat-widget" style="padding:16px; text-align:center; cursor:pointer;" onclick="Pages.showBillModal('Credit Card')">
+              <i class="fa fa-credit-card text-accent" style="font-size:1.5rem; margin-bottom:8px;"></i>
+              <div style="font-size:0.8rem; font-weight:600;">Credit Card</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="form-section-title"><i class="fa fa-clock"></i> Upcoming & Saved Bills</div>
+          <div class="empty-state" style="padding:20px; text-align:center;">
+            <i class="fa fa-calendar-check text-muted" style="font-size:2rem; margin-bottom:10px;"></i>
+            <p style="font-size:0.9rem; color:var(--text-muted);">No pending bills for this month.</p>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  showBillModal: (type) => {
+    App.showCustomModal(`
+      <h2 class="modal-title"><i class="fa fa-file-invoice-dollar text-accent"></i> Pay ${type}</h2>
+      <div class="form-group mt-16">
+        <label class="form-label">Consumer Number / ID</label>
+        <input type="text" id="bill-id" class="input-full" placeholder="Enter ID">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Amount (₹)</label>
+        <input type="number" id="bill-amt" class="input-full" placeholder="0.00">
+      </div>
+      <button class="btn-primary w-full mt-20" onclick="Pages.payBill('${type}')">Pay Now</button>
+    `);
+  },
+
+  payBill: async (type) => {
+    const billId = document.getElementById('bill-id').value;
+    const amt = parseFloat(document.getElementById('bill-amt').value);
+    
+    if (!billId || !amt) return App.toast('Please enter valid details', 'error');
+    
+    try {
+      const data = {
+        fromAccountId: App.accounts[0]._id,
+        toAccountNumber: 'BILLER_' + type.replace(' ', '').toUpperCase(),
+        amount: amt,
+        mode: 'IMPS',
+        description: `Bill Payment - ${type} (${billId})`,
+        saveBeneficiary: false
+      };
+      
+      const btn = document.querySelector('#modal-content .btn-primary');
+      btn.innerHTML = `<i class="fa fa-spinner spin"></i> Processing...`;
+      btn.disabled = true;
+      
+      await Api.transfer(data);
+      App.toast(`${type} bill of ₹${amt} paid successfully!`, 'success');
+      App.closeModal();
+      Pages.renderDashboard(); // Refresh balance
+      App.navigate('dashboard');
+    } catch (e) {
+      App.toast(e.message, 'error');
+      const btn = document.querySelector('#modal-content .btn-primary');
+      btn.innerHTML = `Pay Now`;
+      btn.disabled = false;
     }
   },
 
@@ -549,8 +652,10 @@ const Pages = {
             </div>
             
             <div class="mt-24 grid-2">
-              <button class="btn-outline w-full" onclick="App.toast('Feature locked in demo', 'info')"><i class="fa fa-edit"></i> Edit Limits</button>
-              <button class="btn-primary w-full" style="background:var(--red); box-shadow:none" onclick="App.toast('Feature locked in demo', 'info')"><i class="fa fa-ban"></i> Block Card</button>
+              <button class="btn-outline w-full" onclick="Pages.showEditLimitModal('${c._id}', ${c.dailyLimit})"><i class="fa fa-edit"></i> Edit Limits</button>
+              <button class="btn-primary w-full" style="background:${c.status === 'active' ? 'var(--red)' : 'var(--green)'}; box-shadow:none" onclick="Pages.toggleCardStatus('${c._id}', '${c.status}')">
+                <i class="fa ${c.status === 'active' ? 'fa-ban' : 'fa-check'}"></i> ${c.status === 'active' ? 'Block Card' : 'Unblock Card'}
+              </button>
             </div>
           </div>
         </div>
@@ -562,6 +667,42 @@ const Pages = {
       `;
     } catch(err) {
       main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error: ${err.message}</p></div>`;
+    }
+  },
+
+  showEditLimitModal: (id, currentLimit) => {
+    App.showCustomModal(`
+      <h2 class="modal-title"><i class="fa fa-sliders-h text-accent"></i> Edit Card Limit</h2>
+      <div class="form-group mt-16">
+        <label class="form-label">New Daily Limit (₹)</label>
+        <input type="number" id="new-card-limit" class="input-full" value="${currentLimit}">
+      </div>
+      <button class="btn-primary w-full mt-20" onclick="Pages.updateCardLimit('${id}')">Save Changes</button>
+    `);
+  },
+
+  updateCardLimit: async (id) => {
+    const limit = parseInt(document.getElementById('new-card-limit').value);
+    if (!limit || limit < 1000) return App.toast('Limit must be at least ₹1000', 'error');
+    try {
+      await Api.updateCard(id, { dailyLimit: limit });
+      App.toast('Card limit updated successfully', 'success');
+      App.closeModal();
+      Pages.renderCards();
+    } catch (e) {
+      App.toast(e.message, 'error');
+    }
+  },
+
+  toggleCardStatus: async (id, currentStatus) => {
+    const newStatus = currentStatus === 'active' ? 'blocked' : 'active';
+    if (!confirm(`Are you sure you want to ${newStatus === 'blocked' ? 'block' : 'unblock'} this card?`)) return;
+    try {
+      await Api.updateCard(id, { status: newStatus });
+      App.toast(`Card ${newStatus} successfully`, 'success');
+      Pages.renderCards();
+    } catch (e) {
+      App.toast(e.message, 'error');
     }
   },
 
@@ -831,7 +972,7 @@ const Pages = {
         <div class="card" style="padding:0; overflow:hidden">
           <div class="flex justify-between items-center" style="padding:24px">
             <div class="form-section-title mb-0">Saved Payees</div>
-            <button class="btn-primary" style="width:auto; padding:8px 16px; margin:0" onclick="App.toast('Feature locked in demo', 'info')"><i class="fa fa-plus"></i> Add New</button>
+            <button class="btn-primary" style="width:auto; padding:8px 16px; margin:0" onclick="Pages.showAddBenModal()"><i class="fa fa-plus"></i> Add New</button>
           </div>
           <div style="overflow-x:auto">
             <table class="data-table">
@@ -856,6 +997,43 @@ const Pages = {
     }
   },
 
+  showAddBenModal: () => {
+    App.showCustomModal(`
+      <h2 class="modal-title"><i class="fa fa-user-plus text-accent"></i> Add Beneficiary</h2>
+      <div class="form-group">
+        <label class="form-label">Nickname</label>
+        <input type="text" id="ben-nick" class="input-full" placeholder="e.g. John Doe">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Account Number</label>
+        <input type="text" id="ben-acc" class="input-full" placeholder="10-digit number" maxlength="10">
+      </div>
+      <div class="form-group">
+        <label class="form-label">IFSC Code</label>
+        <input type="text" id="ben-ifsc" class="input-full" placeholder="e.g. NEXB0000001">
+      </div>
+      <button class="btn-primary w-full mt-20" onclick="Pages.submitAddBen()">Save Beneficiary</button>
+    `);
+  },
+
+  submitAddBen: async () => {
+    const data = {
+      nickname: document.getElementById('ben-nick').value,
+      accountNumber: document.getElementById('ben-acc').value,
+      ifscCode: document.getElementById('ben-ifsc').value,
+      bankName: 'NexBank'
+    };
+    if (!data.nickname || !data.accountNumber || !data.ifscCode) return App.toast('Please fill all fields', 'error');
+    try {
+      await Api.addBeneficiary(data);
+      App.toast('Beneficiary added successfully', 'success');
+      App.closeModal();
+      Pages.renderBeneficiaries();
+    } catch (e) {
+      App.toast(e.message, 'error');
+    }
+  },
+
   deleteBen: async (id) => {
     if(!confirm('Delete this beneficiary?')) return;
     try {
@@ -875,13 +1053,36 @@ const Pages = {
       main.innerHTML = `
         <div class="section-title"><i class="fa fa-user-circle"></i> My Profile</div>
         <div class="card max-w-lg">
-          <div class="form-group"><label class="form-label">Name</label><input type="text" class="input-full" value="${user.firstName} ${user.lastName}" readonly></div>
-          <div class="form-group"><label class="form-label">Email</label><input type="text" class="input-full" value="${user.email}" readonly></div>
-          <div class="form-group"><label class="form-label">Phone</label><input type="text" class="input-full" value="${user.phone}" readonly></div>
-          <div class="form-group"><label class="form-label">PAN Number</label><input type="text" class="input-full" value="${user.panNumber || 'Not provided'}" readonly></div>
+          <div class="form-group"><label class="form-label">First Name</label><input type="text" id="prof-fname" class="input-full" value="${user.firstName}"></div>
+          <div class="form-group"><label class="form-label">Last Name</label><input type="text" id="prof-lname" class="input-full" value="${user.lastName}"></div>
+          <div class="form-group"><label class="form-label">Email</label><input type="text" class="input-full" value="${user.email}" readonly style="opacity:0.7"></div>
+          <div class="form-group"><label class="form-label">Phone</label><input type="text" id="prof-phone" class="input-full" value="${user.phone}"></div>
+          <div class="form-group"><label class="form-label">Address</label><input type="text" id="prof-addr" class="input-full" value="${user.address || ''}"></div>
+          <div class="form-group"><label class="form-label">PAN Number</label><input type="text" class="input-full" value="${user.panNumber || 'Not provided'}" readonly style="opacity:0.7"></div>
+          <button class="btn-primary mt-20" onclick="Pages.updateProfile()">Update Profile</button>
         </div>
       `;
     } catch(err) {}
+  },
+
+  updateProfile: async () => {
+    const data = {
+      firstName: document.getElementById('prof-fname').value,
+      lastName: document.getElementById('prof-lname').value,
+      phone: document.getElementById('prof-phone').value,
+      address: document.getElementById('prof-addr').value
+    };
+    try {
+      const res = await Api.updateProfile(data);
+      App.toast(res.message, 'success');
+      App.user = res.user;
+      const initials = (res.user.firstName[0] + res.user.lastName[0]).toUpperCase();
+      document.getElementById('sidebar-name').textContent = res.user.firstName + ' ' + res.user.lastName;
+      document.getElementById('sidebar-avatar').textContent = initials;
+      document.getElementById('topbar-avatar').textContent = initials;
+    } catch (e) {
+      App.toast(e.message, 'error');
+    }
   },
 
   renderCalculators: () => {

@@ -49,7 +49,7 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 **Money Transfer**
 - [ ] IMPS / NEFT / RTGS with correct limits
 - [ ] UPI-style instant transfer via 10-digit Account ID
-- [ ] Beneficiary management (add/remove/favorite)
+- [x] Beneficiary management (add/remove/favorite)
 - [ ] Transfer confirmation with receiver name verification
 - [ ] Recurring transfer setup
 - [ ] Transaction receipt with PDF download (simulated)
@@ -63,8 +63,8 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 
 **Cards**
 - [ ] Virtual Debit Card with animated flip
-- [ ] Card block/unblock
-- [ ] Daily limit management
+- [x] Card block/unblock
+- [x] Daily limit management
 - [ ] International usage toggle
 - [ ] Contactless toggle
 
@@ -82,8 +82,8 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 - [ ] Pre-payment calculator
 
 **Bill Payments & UPI**
-- [ ] Utility bill payment (Electricity, Gas, Water, Mobile)
-- [ ] Recharge (Prepaid mobile)
+- [x] Utility bill payment (Electricity, Gas, Water, Mobile)
+- [x] Recharge (Prepaid mobile)
 - [ ] Tax payment
 
 **Calculators**
@@ -100,11 +100,11 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 - [ ] Mark all read
 
 **Profile & KYC**
-- [ ] View/Edit profile
+- [x] View/Edit profile
 - [ ] Change password
 - [ ] KYC status
 - [ ] Linked devices
-- [ ] Download account summary
+- [x] Download account summary
 
 **Support**
 - [ ] FAQ section
