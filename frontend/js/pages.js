@@ -1125,7 +1125,14 @@ const Pages = {
           <div class="form-group"><label class="form-label">Phone</label><input type="text" id="prof-phone" class="input-full" value="${user.phone}"></div>
           <div class="form-group"><label class="form-label">Address</label><input type="text" id="prof-addr" class="input-full" value="${user.address || ''}"></div>
           <div class="form-group"><label class="form-label">PAN Number</label><input type="text" class="input-full" value="${user.panNumber || 'Not provided'}" readonly style="opacity:0.7"></div>
-          <button class="btn-primary mt-20 w-full" onclick="Pages.updateProfile()">Update Profile</button>
+          <button class="btn-primary mt-20 w-full mb-12" onclick="Pages.updateProfile()">Update Profile</button>
+          
+          <div class="form-section-title mt-20 pt-16" style="border-top:1px solid var(--border)"><i class="fa fa-key"></i> Security & KYC</div>
+          <button class="btn-outline w-full mb-12" onclick="App.toast('A password reset link was sent to your email.', 'info')">Change Password</button>
+          <div class="info-row" style="border:1px solid var(--border); border-radius:8px; padding:12px;">
+            <div style="font-weight:600; font-size:0.9rem;">KYC Status</div>
+            <span class="status-badge ${user.kycStatus === 'approved' ? 'active' : 'pending'}">${(user.kycStatus || 'Pending').toUpperCase()}</span>
+          </div>
         </div>
 
         <div class="card max-w-lg mt-24">
@@ -1266,8 +1273,38 @@ const Pages = {
   renderSupport: () => {
     const main = document.getElementById('view-support');
     main.innerHTML = `
-      <div class="section-title"><i class="fa fa-headset"></i> Support & FAQ</div>
-      <div class="empty-state"><i class="fa fa-envelope-open-text"></i><p>Contact us at support@nexbank.com or call 1800-NEX-BANK.</p></div>
+      <div class="section-title"><i class="fa fa-headset"></i> Support & Services</div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="form-section-title"><i class="fa fa-question-circle"></i> FAQ</div>
+          <div style="font-size:0.85rem; color:var(--text-muted);">
+            <p class="mb-12"><strong>How to reset my password?</strong><br>Click 'Forgot Password' on the login screen.</p>
+            <p class="mb-12"><strong>What are NEFT timings?</strong><br>NEFT is available 24x7.</p>
+            <p class="mb-12"><strong>How to block my card?</strong><br>Go to 'Manage Cards' and click 'Block Card'.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="form-section-title"><i class="fa fa-ticket-alt"></i> Raise a Ticket</div>
+          <div class="form-group">
+            <select class="input-full"><option>Transaction Failed</option><option>Card Issue</option><option>Other</option></select>
+          </div>
+          <textarea class="input-full mb-12" rows="3" placeholder="Describe your issue..."></textarea>
+          <button class="btn-primary w-full" onclick="App.toast('Ticket #TK' + Math.floor(Math.random()*1000) + ' created', 'success')">Submit Ticket</button>
+        </div>
+      </div>
+      <div class="grid-2 mt-20">
+        <div class="card">
+          <div class="form-section-title"><i class="fa fa-map-marker-alt"></i> ATM & Branch Locator</div>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">Find nearest NexBank services.</p>
+          <div class="form-group mb-12"><input type="text" class="input-full" placeholder="Enter Pincode or City"></div>
+          <button class="btn-outline w-full" onclick="App.toast('Found 3 branches nearby', 'info')">Search Location</button>
+        </div>
+        <div class="card" style="background:var(--accent); color:#fff;">
+          <div class="form-section-title text-white"><i class="fa fa-comments"></i> Live Chat Support</div>
+          <p style="font-size:0.85rem; margin-bottom:16px;">Chat with our AI Assistant Nexa for instant help.</p>
+          <button class="btn-primary w-full" style="background:#fff; color:var(--accent)" onclick="App.toast('Connecting to Live Agent...', 'info')"><i class="fa fa-comment-dots"></i> Start Chat</button>
+        </div>
+      </div>
     `;
   },
 
@@ -1291,6 +1328,9 @@ const Pages = {
           <td class="text-right">
             <button class="btn-outline" style="width:auto; padding:6px 12px; margin:0; font-size:0.75rem; border-color:${u.status==='active'?'var(--red)':'var(--green)'}; color:${u.status==='active'?'var(--red)':'var(--green)'}" onclick="Pages.blockUser('${u.id}')">
               ${u.status === 'active' ? 'Block User' : 'Unblock'}
+            </button>
+            <button class="btn-primary" style="width:auto; padding:6px 12px; margin:0; font-size:0.75rem; background:var(--gold); border:none; margin-left:8px;" onclick="Pages.approveKYC('${u.id}')">
+              Approve KYC
             </button>
           </td>
         </tr>
@@ -1360,6 +1400,17 @@ const Pages = {
       Pages.renderAdmin();
     } catch(err) {
       App.toast(err.message, 'error');
+    }
+  },
+
+  approveKYC: async (id) => {
+    if(!confirm("Are you sure you want to approve KYC for this user?")) return;
+    try {
+      App.toast("KYC Approved successfully", "success");
+      // Simulate API call
+      setTimeout(() => Pages.renderAdmin(), 500);
+    } catch(err) {
+      App.toast(err.message, "error");
     }
   }
 };

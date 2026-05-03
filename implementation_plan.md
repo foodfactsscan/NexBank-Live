@@ -1,6 +1,7 @@
 # NexBank — Professional Banking System: Complete Rebuild Plan
 
 ## Root Cause of Current Failure
+
 The `frontend/js/api.js` file has a **JavaScript syntax error** — the `try` block in `_req()` was never closed with a `catch` block (introduced in a previous edit). This means the entire `Api` object is broken and **every single API call silently fails**. This is why the dashboard shows "Waking up database" forever. It has nothing to do with MongoDB.
 
 **The #1 fix needed RIGHT NOW**: Repair `api.js`. Everything else will start working immediately.
@@ -10,13 +11,15 @@ The `frontend/js/api.js` file has a **JavaScript syntax error** — the `try` bl
 ## Full Professional Rebuild Plan
 
 ### Phase 1 — Immediate Critical Fix (5 minutes)
+
 Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 
 ---
 
 ### Phase 2 — Complete Codebase Audit & Fix
 
-#### Issues Found in Current Code:
+#### Issues Found in Current Code
+
 | File | Issue | Fix |
 |------|-------|-----|
 | `frontend/js/api.js` | Broken try-catch syntax, entire Api object broken | Rewrite cleanly |
@@ -29,16 +32,16 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 
 ### Phase 3 — Professional Feature Set (Full Banking)
 
-#### Customer Features (matching HDFC/SBI/ICICI):
+#### Customer Features (matching HDFC/SBI/ICICI)
 
 **Auth & Security**
-- [x] Email + Account Number login
-- [ ] 2FA via OTP (simulated)
-- [x] Forgot Password flow
-- [x] Session timeout with auto-logout
-- [x] Device/session management
+
+- [ ] Forgot Password flow
+- [ ] Session timeout with auto-logout
+- [ ] Device/session management
 
 **Dashboard**
+
 - [x] Real balance card with mini chart
 - [x] Income vs Expense this month
 - [x] 5 most recent transactions
@@ -47,72 +50,76 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 - [x] Linked accounts overview
 
 **Money Transfer**
-- [x] IMPS / NEFT / RTGS with correct limits
-- [x] UPI-style instant transfer via 10-digit Account ID
+
+- [ ] IMPS / NEFT / RTGS with correct limits
+- [ ] UPI-style instant transfer via 10-digit Account ID
 - [x] Beneficiary management (add/remove/favorite)
-- [x] Transfer confirmation with receiver name verification
-- [x] Recurring transfer setup
-- [x] Transaction receipt with PDF download (simulated)
+- [ ] Transfer confirmation with receiver name verification
+- [ ] Recurring transfer setup
+- [ ] Transaction receipt with PDF download (simulated)
 
 **Accounts**
-- [x] Savings Account with IFSC, branch, balance
-- [x] Account statement with date filter
-- [x] Mini statement (last 5 txns)
-- [x] Download statement PDF (simulated)
-- [x] Nominee details
+
+- [ ] Savings Account with IFSC, branch, balance
+- [ ] Account statement with date filter
+- [ ] Mini statement (last 5 txns)
+- [ ] Download statement PDF (simulated)
+- [ ] Nominee details
 
 **Cards**
-- [x] Virtual Debit Card with animated flip
+
+- [ ] Virtual Debit Card with animated flip
 - [x] Card block/unblock
 - [x] Daily limit management
-- [ ] International usage toggle
-- [ ] Contactless toggle
 
 **Investments & FD**
-- [x] Open FD with compound interest calculation
-- [x] FD maturity calculator
-- [x] Break FD with penalty calculation
+
+- [ ] Open FD with compound interest calculation
+- [ ] FD maturity calculator
+- [ ] Break FD with penalty calculation
 - [ ] Interest payout options (Monthly/Quarterly/At Maturity)
 - [ ] FD certificate download (simulated)
 
 **Loans**
-- [x] Personal / Home / Auto Loan application
+
+- [ ] Personal / Home / Auto Loan application
 - [ ] EMI calculator with full amortization table
 - [ ] Loan status tracking
 - [ ] Pre-payment calculator
 
 **Bill Payments & UPI**
+
 - [x] Utility bill payment (Electricity, Gas, Water, Mobile)
 - [x] Recharge (Prepaid mobile)
-- [ ] Tax payment
 
 **Calculators**
-- [x] EMI Calculator (with amortization)
-- [x] FD/RD Calculator
+
+- [ ] EMI Calculator (with amortization)
+- [ ] FD/RD Calculator
 - [ ] SIP Calculator
 - [ ] Tax Calculator (Old vs New Regime)
 - [ ] Inflation/Future Value Calculator
 
 **Notifications**
+
 - [ ] Real-time debit/credit alerts
-- [ ] KYC reminders
-- [ ] Promotional offers
 - [ ] Mark all read
 
 **Profile & KYC**
+
 - [x] View/Edit profile
 - [ ] Change password
 - [ ] KYC status
-- [x] Linked devices
+- [ ] Linked devices
 - [x] Download account summary
 
 **Support**
+
 - [ ] FAQ section
-- [ ] Raise ticket (simulated)
-- [ ] Branch/ATM locator (simulated)
 - [ ] Chat widget (UI)
 
-**Admin Panel** (separate, admin@nexbank.com only)
+**Admin Panel** (separate, <admin@nexbank.com> only)
+
 - [x] All users overview
 - [x] Total transactions today
 - [x] Block/unblock users
@@ -122,6 +129,7 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 ---
 
 ### Phase 4 — Mobile Responsiveness
+
 - [ ] Bottom navigation bar on mobile (like SBI YONO)
 - [ ] Touch-friendly card swipe
 - [ ] Responsive sidebar → bottom sheet on mobile
@@ -130,6 +138,7 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 ---
 
 ### Phase 5 — UI/UX Overhaul
+
 - [ ] Premium dark theme with glassmorphism
 - [ ] Animated balance counter
 - [ ] Smooth page transitions
@@ -141,6 +150,7 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 ---
 
 ### Phase 6 — Vercel Deployment Fix
+
 - [ ] Correct `vercel.json` for frontend + backend
 - [ ] Environment variable validation on startup
 - [ ] Graceful error handling for cold starts
@@ -148,6 +158,7 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 ---
 
 ## Execution Order
+
 1. Fix `api.js` (10 min) → Push → Verify dashboard works
 2. Clean up stale files (5 min) → Push
 3. Rebuild frontend UI/UX (3 hours)
