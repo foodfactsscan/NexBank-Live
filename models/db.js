@@ -1,61 +1,142 @@
-// In-memory database simulation with persistence via JSON
-// In production, replace with PostgreSQL/MongoDB
-
-const fs = require('fs');
-const path = require('path');
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const DATA_FILE = path.join(__dirname, 'data', 'db.json');
+const MONGODB_URI = process.env.MONGODB_URI;
 
-// Default data structure
-const defaultData = {
-  users: [],
-  accounts: [],
-  transactions: [],
-  notifications: [],
-  beneficiaries: [],
-  fixedDeposits: [],
-  recurringDeposits: [],
-  loans: [],
-  cards: []
-};
-
-// Ensure data directory exists
-const dataDir = path.join(__dirname, 'data');
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+if (!MONGODB_URI && process.env.NODE_ENV === 'production') {
+  console.error('CRITICAL: MONGODB_URI is not defined in environment variables!');
 }
 
-// Load or initialize database
-function loadDB() {
-  try {
-    if (fs.existsSync(DATA_FILE)) {
-      const raw = fs.readFileSync(DATA_FILE, 'utf8');
-      return { ...defaultData, ...JSON.parse(raw) };
-    }
-  } catch (e) {
-    console.error('DB load error:', e.message);
-  }
-  return { ...defaultData };
-}
+// ─── Schemas ─────────────────────────────────────────────────────────────────
 
-function saveDB(db) {
-  try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2), 'utf8');
-  } catch (e) {
-    console.error('DB save error:', e.message);
-  }
-}
+const userSchema = new mongoose.Schema({
+  firstName: { type: String, required: true },
+  lastName: { type: String, required: true },
+  email: { type: String, required: true, unique: true, lowercase: true },
+  phone: { type: String, required: true, unique: true },
+  passwordHash: { type: String, required: true },
+  dateOfBirth: String,
+  address: String,
+  gender: String,
+  panNumber: String,
+  aadharNumber: String,
+  kycStatus: { type: String, default: 'pending' },
+  profilePicture: String,
+  role: { type: String, default: 'user' },
+  lastLogin: Date
+}, { timestamps: true });
 
-let db = loadDB();
+const accountSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  accountType: { type: String, required: true }, // savings, current
+  accountName: String,
+  accountNumber: { type: String, required: true, unique: true },
+  balance: { type: Number, default: 0 },
+  currency: { type: String, default: 'INR' },
+  interestRate: { type: Number, default: 3.5 },
+  minimumBalance: { type: Number, default: 500 },
+  ifscCode: { type: String, default: 'NEXB0001234' },
+  branch: { type: String, default: 'Main Branch' },
+  nomineeName: String,
+  status: { type: String, default: 'active' }
+}, { timestamps: true });
 
-// ─── User Operations ─────────────────────────────────────────────────────────
+const transactionSchema = new mongoose.Schema({
+  fromAccountId: { type: String, required: true }, // Can be 'FD_ACCOUNT', 'LOAN_SYSTEM', or account ID
+  toAccountId: { type: String, required: true },
+  fromAccountNumber: String,
+  toAccountNumber: String,
+  amount: { type: Number, required: true },
+  type: { type: String, required: true }, // transfer, fd_creation, fd_break, loan_disbursement, loan_repayment
+  mode: { type: String, default: 'internal' }, // IMPS, NEFT, RTGS, UPI, internal
+  category: { type: String, default: 'Other' },
+  description: String,
+  status: { type: String, default: 'completed' },
+  transactionId: { type: String, required: true, unique: true },
+  toAccountHolderName: String,
+  fromAccountHolderName: String
+}, { timestamps: true });
 
-function generateAccountNumber() {
+const notificationSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  type: String,
+  title: String,
+  message: String,
+  read: { type: Boolean, default: false },
+  icon: String,
+  transactionId: String
+}, { timestamps: true });
+
+const beneficiarySchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  accountNumber: { type: String, required: true },
+  accountHolderName: String,
+  ifscCode: String,
+  bankName: String,
+  nickname: String
+}, { timestamps: true });
+
+const fdSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  accountId: { type: mongoose.Schema.Types.ObjectId, ref: 'Account', required: true },
+  principalAmount: { type: Number, required: true },
+  interestRate: { type: Number, required: true },
+  tenureMonths: { type: Number, required: true },
+  maturityAmount: { type: Number, required: true },
+  maturityDate: { type: Date, required: true },
+  status: { type: String, default: 'active' }, // active, closed, broken
+  fdNumber: { type: String, required: true, unique: true }
+}, { timestamps: true });
+
+const cardSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  accountId: { type: mongoose.Schema.Types.ObjectId, ref: 'Account', required: true },
+  cardType: { type: String, default: 'debit' },
+  cardNetwork: { type: String, default: 'Visa' },
+  cardNumber: { type: String, required: true, unique: true },
+  cvv: { type: String, required: true },
+  expiryDate: { type: String, required: true },
+  cardHolderName: String,
+  status: { type: String, default: 'active' },
+  dailyLimit: { type: Number, default: 100000 },
+  internationalUsage: { type: Boolean, default: false },
+  contactlessEnabled: { type: Boolean, default: true }
+}, { timestamps: true });
+
+const loanSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  loanType: String,
+  amount: Number,
+  tenureMonths: Number,
+  interestRate: Number,
+  emi: Number,
+  purpose: String,
+  monthlyIncome: Number,
+  status: { type: String, default: 'under_review' },
+  applicationDate: { type: Date, default: Date.now }
+}, { timestamps: true });
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+const User = mongoose.model('User', userSchema);
+const Account = mongoose.model('Account', accountSchema);
+const Transaction = mongoose.model('Transaction', transactionSchema);
+const Notification = mongoose.model('Notification', notificationSchema);
+const Beneficiary = mongoose.model('Beneficiary', beneficiarySchema);
+const FixedDeposit = mongoose.model('FixedDeposit', fdSchema);
+const Card = mongoose.model('Card', cardSchema);
+const Loan = mongoose.model('Loan', loanSchema);
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+async function generateAccountNumber() {
   let num;
-  do {
+  let exists = true;
+  while (exists) {
     num = Math.floor(1000000000 + Math.random() * 9000000000).toString();
-  } while (db.accounts.find(a => a.accountNumber === num));
+    const check = await Account.findOne({ accountNumber: num });
+    if (!check) exists = false;
+  }
   return num;
 }
 
@@ -66,180 +147,136 @@ function generateTransactionId() {
   return `NXB${ts}${rand}`;
 }
 
-// Users
+// ─── API Wrapper (to maintain compatibility as much as possible) ─────────────
+
 const Users = {
-  findByEmail: (email) => db.users.find(u => u.email.toLowerCase() === email.toLowerCase()),
-  findById: (id) => db.users.find(u => u.id === id),
-  findByPhone: (phone) => db.users.find(u => u.phone === phone),
-  create: (data) => {
-    // If it's the specific admin email or no users exist, make them admin
-    const isFirst = db.users.length === 0;
+  findByEmail: async (email) => await User.findOne({ email: email.toLowerCase() }),
+  findById: async (id) => {
+    if (!mongoose.Types.ObjectId.isValid(id)) return null;
+    return await User.findById(id);
+  },
+  findByPhone: async (phone) => await User.findOne({ phone }),
+  create: async (data) => {
+    const userCount = await User.countDocuments();
+    const isFirst = userCount === 0;
     const role = (data.email === 'admin@nexbank.com' || isFirst) ? 'admin' : (data.role || 'user');
-    const user = { ...data, role, id: require('crypto').randomUUID(), createdAt: new Date().toISOString() };
-    db.users.push(user);
-    saveDB(db);
-    return user;
+    const user = new User({ ...data, role });
+    return await user.save();
   },
-  update: (id, updates) => {
-    const idx = db.users.findIndex(u => u.id === id);
-    if (idx === -1) return null;
-    db.users[idx] = { ...db.users[idx], ...updates, updatedAt: new Date().toISOString() };
-    saveDB(db);
-    return db.users[idx];
-  },
-  getAll: () => db.users
+  update: async (id, updates) => await User.findByIdAndUpdate(id, updates, { new: true }),
+  getAll: async () => await User.find()
 };
 
-// Accounts
 const Accounts = {
-  findByUserId: (userId) => db.accounts.filter(a => a.userId === userId),
-  findByAccountNumber: (num) => db.accounts.find(a => a.accountNumber === num),
-  findById: (id) => db.accounts.find(a => a.id === id),
-  create: (data) => {
-    const account = {
-      ...data,
-      id: require('crypto').randomUUID(),
-      accountNumber: generateAccountNumber(),
-      balance: data.balance || 0,
-      status: 'active',
-      createdAt: new Date().toISOString()
-    };
-    db.accounts.push(account);
-    saveDB(db);
-    return account;
+  findByUserId: async (userId) => await Account.find({ userId }),
+  findByAccountNumber: async (num) => await Account.findOne({ accountNumber: num }),
+  findById: async (id) => {
+    if (!mongoose.Types.ObjectId.isValid(id)) return null;
+    return await Account.findById(id);
   },
-  updateBalance: (id, amount) => {
-    const idx = db.accounts.findIndex(a => a.id === id);
-    if (idx === -1) return null;
-    db.accounts[idx].balance = parseFloat((db.accounts[idx].balance + amount).toFixed(2));
-    db.accounts[idx].updatedAt = new Date().toISOString();
-    saveDB(db);
-    return db.accounts[idx];
+  create: async (data) => {
+    const accountNumber = await generateAccountNumber();
+    const account = new Account({ ...data, accountNumber });
+    return await account.save();
   },
-  update: (id, updates) => {
-    const idx = db.accounts.findIndex(a => a.id === id);
-    if (idx === -1) return null;
-    db.accounts[idx] = { ...db.accounts[idx], ...updates, updatedAt: new Date().toISOString() };
-    saveDB(db);
-    return db.accounts[idx];
+  updateBalance: async (id, amount) => {
+    const account = await Account.findById(id);
+    if (!account) return null;
+    account.balance = parseFloat((account.balance + amount).toFixed(2));
+    return await account.save();
   },
-  getAll: () => db.accounts
+  update: async (id, updates) => await Account.findByIdAndUpdate(id, updates, { new: true }),
+  getAll: async () => await Account.find()
 };
 
-// Transactions
 const Transactions = {
-  findByAccountId: (accountId, limit = 50) => {
-    return db.transactions
-      .filter(t => t.fromAccountId === accountId || t.toAccountId === accountId)
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, limit);
+  findByAccountId: async (accountId, limit = 50) => {
+    return await Transaction.find({
+      $or: [{ fromAccountId: accountId }, { toAccountId: accountId }]
+    }).sort({ createdAt: -1 }).limit(limit);
   },
-  findById: (id) => db.transactions.find(t => t.id === id),
-  create: (data) => {
-    const txn = {
-      ...data,
-      id: require('crypto').randomUUID(),
-      transactionId: generateTransactionId(),
-      status: 'completed',
-      createdAt: new Date().toISOString()
-    };
-    db.transactions.push(txn);
-    saveDB(db);
-    return txn;
+  findById: async (id) => {
+    if (!mongoose.Types.ObjectId.isValid(id)) return null;
+    return await Transaction.findById(id);
   },
-  getAll: () => db.transactions
+  create: async (data) => {
+    const transactionId = generateTransactionId();
+    const txn = new Transaction({ ...data, transactionId });
+    return await txn.save();
+  },
+  getAll: async () => await Transaction.find().sort({ createdAt: -1 })
 };
 
-// Notifications
 const Notifications = {
-  findByUserId: (userId) => db.notifications
-    .filter(n => n.userId === userId)
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 50),
-  create: (data) => {
-    const notif = { ...data, id: require('crypto').randomUUID(), read: false, createdAt: new Date().toISOString() };
-    db.notifications.push(notif);
-    saveDB(db);
-    return notif;
+  findByUserId: async (userId) => await Notification.find({ userId }).sort({ createdAt: -1 }).limit(50),
+  create: async (data) => {
+    const notif = new Notification(data);
+    return await notif.save();
   },
-  markRead: (id, userId) => {
-    const idx = db.notifications.findIndex(n => n.id === id && n.userId === userId);
-    if (idx === -1) return null;
-    db.notifications[idx].read = true;
-    saveDB(db);
-    return db.notifications[idx];
-  },
-  markAllRead: (userId) => {
-    db.notifications.forEach((n, i) => { if (n.userId === userId) db.notifications[i].read = true; });
-    saveDB(db);
-  }
+  markRead: async (id, userId) => await Notification.findOneAndUpdate({ _id: id, userId }, { read: true }, { new: true }),
+  markAllRead: async (userId) => await Notification.updateMany({ userId }, { read: true })
 };
 
-// Beneficiaries
 const Beneficiaries = {
-  findByUserId: (userId) => db.beneficiaries.filter(b => b.userId === userId),
-  create: (data) => {
-    const ben = { ...data, id: require('crypto').randomUUID(), createdAt: new Date().toISOString() };
-    db.beneficiaries.push(ben);
-    saveDB(db);
-    return ben;
+  findByUserId: async (userId) => await Beneficiary.find({ userId }),
+  create: async (data) => {
+    const ben = new Beneficiary(data);
+    return await ben.save();
   },
-  findById: (id) => db.beneficiaries.find(b => b.id === id),
-  delete: (id, userId) => {
-    const idx = db.beneficiaries.findIndex(b => b.id === id && b.userId === userId);
-    if (idx === -1) return false;
-    db.beneficiaries.splice(idx, 1);
-    saveDB(db);
-    return true;
+  findById: async (id) => {
+    if (!mongoose.Types.ObjectId.isValid(id)) return null;
+    return await Beneficiary.findById(id);
+  },
+  delete: async (id, userId) => {
+    const result = await Beneficiary.deleteOne({ _id: id, userId });
+    return result.deletedCount > 0;
   }
 };
 
-// Fixed Deposits
 const FixedDeposits = {
-  findByUserId: (userId) => db.fixedDeposits.filter(f => f.userId === userId),
-  create: (data) => {
-    const fd = { ...data, id: require('crypto').randomUUID(), createdAt: new Date().toISOString() };
-    db.fixedDeposits.push(fd);
-    saveDB(db);
-    return fd;
+  findByUserId: async (userId) => await FixedDeposit.find({ userId }),
+  create: async (data) => {
+    const fd = new FixedDeposit(data);
+    return await fd.save();
   },
-  update: (id, updates) => {
-    const idx = db.fixedDeposits.findIndex(f => f.id === id);
-    if (idx === -1) return null;
-    db.fixedDeposits[idx] = { ...db.fixedDeposits[idx], ...updates };
-    saveDB(db);
-    return db.fixedDeposits[idx];
-  }
+  update: async (id, updates) => await FixedDeposit.findByIdAndUpdate(id, updates, { new: true })
 };
 
-// Loans
-const Loans = {
-  findByUserId: (userId) => db.loans.filter(l => l.userId === userId),
-  create: (data) => {
-    const loan = { ...data, id: require('crypto').randomUUID(), createdAt: new Date().toISOString() };
-    db.loans.push(loan);
-    saveDB(db);
-    return loan;
-  }
-};
-
-// Cards
 const Cards = {
-  findByUserId: (userId) => db.cards.filter(c => c.userId === userId),
-  findByAccountId: (accountId) => db.cards.filter(c => c.accountId === accountId),
-  create: (data) => {
-    const card = { ...data, id: require('crypto').randomUUID(), createdAt: new Date().toISOString() };
-    db.cards.push(card);
-    saveDB(db);
-    return card;
+  findByUserId: async (userId) => await Card.find({ userId }),
+  findByAccountId: async (accountId) => await Card.find({ accountId }),
+  create: async (data) => {
+    const card = new Card(data);
+    return await card.save();
   },
-  update: (id, updates) => {
-    const idx = db.cards.findIndex(c => c.id === id);
-    if (idx === -1) return null;
-    db.cards[idx] = { ...db.cards[idx], ...updates };
-    saveDB(db);
-    return db.cards[idx];
+  update: async (id, updates) => await Card.findByIdAndUpdate(id, updates, { new: true })
+};
+
+const Loans = {
+  findByUserId: async (userId) => await Loan.find({ userId }),
+  create: async (data) => {
+    const loan = new Loan(data);
+    return await loan.save();
+  },
+  getAll: async () => await Loan.find()
+};
+
+// ─── DB Connection ───────────────────────────────────────────────────────────
+
+const connectDB = async () => {
+  if (mongoose.connection.readyState >= 1) return;
+  try {
+    const uri = MONGODB_URI || 'mongodb://localhost:27017/nexbank';
+    await mongoose.connect(uri);
+    console.log('✅ MongoDB Connected Successfully');
+  } catch (err) {
+    console.error('❌ MongoDB Connection Error:', err.message);
+    // On Vercel we don't want to exit
+    if (!process.env.VERCEL) process.exit(1);
   }
 };
 
-module.exports = { Users, Accounts, Transactions, Notifications, Beneficiaries, FixedDeposits, Loans, Cards, generateTransactionId };
+module.exports = { 
+  Users, Accounts, Transactions, Notifications, Beneficiaries, FixedDeposits, Cards, Loans,
+  generateTransactionId, connectDB, mongoose 
+};

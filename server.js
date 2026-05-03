@@ -15,6 +15,11 @@ const userRoutes = require('./routes/users');
 const notificationRoutes = require('./routes/notifications');
 const adminRoutes = require('./routes/admin');
 
+const { connectDB } = require('./models/db');
+
+// Connect to Database
+connectDB();
+
 const app = express();
 const server = http.createServer(app);
 
@@ -105,10 +110,13 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-  console.log(`\n🏦 NexBank Server running on http://localhost:${PORT}`);
-  console.log(`🔌 WebSocket server active on ws://localhost:${PORT}/ws`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}\n`);
-});
 
-module.exports = { app, server, wss };
+if (!process.env.VERCEL) {
+  server.listen(PORT, () => {
+    console.log(`\n🏦 NexBank Server running on http://localhost:${PORT}`);
+    console.log(`🔌 WebSocket server active on ws://localhost:${PORT}/ws`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}\n`);
+  });
+}
+
+module.exports = process.env.VERCEL ? app : { app, server, wss };

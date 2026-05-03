@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/auth');
 const { Accounts, Transactions, Notifications, Users, Beneficiaries } = require('../models/db');
+const mongoose = require('mongoose');
 
 // POST /api/transactions/transfer - Core transfer (IMPS/NEFT/RTGS)
 router.post('/transfer', authMiddleware, async (req, res) => {
@@ -40,9 +41,9 @@ router.post('/transfer', authMiddleware, async (req, res) => {
     }
 
     // ── Source account ───────────────────────────────────────────────────────
-    const fromAccount = Accounts.findById(fromAccountId);
+    const fromAccount = await Accounts.findById(fromAccountId);
     if (!fromAccount) return res.status(404).json({ error: 'Source account not found' });
-    if (fromAccount.userId !== req.user.userId) {
+    if (fromAccount.userId.toString() !== req.user.userId) {
       return res.status(403).json({ error: 'Unauthorized access to account' });
     }
     if (fromAccount.status !== 'active') {
@@ -50,12 +51,12 @@ router.post('/transfer', authMiddleware, async (req, res) => {
     }
 
     // ── Destination account ──────────────────────────────────────────────────
-    const toAccount = Accounts.findByAccountNumber(toAccountNumber);
+    const toAccount = await Accounts.findByAccountNumber(toAccountNumber);
     if (!toAccount) return res.status(404).json({ error: 'Destination account not found. Please verify account number.' });
     if (toAccount.status !== 'active') {
       return res.status(400).json({ error: 'Destination account is not active' });
     }
-    if (toAccount.id === fromAccountId) {
+    if (toAccount._id.toString() === fromAccountId) {
       return res.status(400).json({ error: 'Cannot transfer to the same account' });
     }
 
@@ -69,12 +70,12 @@ router.post('/transfer', authMiddleware, async (req, res) => {
     }
 
     // ── Execute atomic transfer ──────────────────────────────────────────────
-    Accounts.updateBalance(fromAccountId, -transferAmount);
-    Accounts.updateBalance(toAccount.id, transferAmount);
+    await Accounts.updateBalance(fromAccountId, -transferAmount);
+    await Accounts.updateBalance(toAccount._id, transferAmount);
 
-    const txn = Transactions.create({
+    const txn = await Transactions.create({
       fromAccountId,
-      toAccountId: toAccount.id,
+      toAccountId: toAccount._id.toString(),
       fromAccountNumber: fromAccount.accountNumber,
       toAccountNumber: toAccount.accountNumber,
       amount: transferAmount,
@@ -89,10 +90,10 @@ router.post('/transfer', authMiddleware, async (req, res) => {
 
     // ── Save beneficiary if requested ────────────────────────────────────────
     if (saveBeneficiary) {
-      const existingBeneficiaries = Beneficiaries.findByUserId(req.user.userId);
+      const existingBeneficiaries = await Beneficiaries.findByUserId(req.user.userId);
       const alreadyExists = existingBeneficiaries.find(b => b.accountNumber === toAccountNumber);
       if (!alreadyExists) {
-        Beneficiaries.create({
+        await Beneficiaries.create({
           userId: req.user.userId,
           accountNumber: toAccountNumber,
           accountHolderName: beneficiaryName || toAccount.accountName,
@@ -104,36 +105,36 @@ router.post('/transfer', authMiddleware, async (req, res) => {
     }
 
     // ── Notifications ────────────────────────────────────────────────────────
-    const senderUser = Users.findById(req.user.userId);
-    const receiverUser = Users.findById(toAccount.userId);
+    const senderUser = await Users.findById(req.user.userId);
+    const receiverUser = await Users.findById(toAccount.userId);
 
     // Sender notification
-    Notifications.create({
+    await Notifications.create({
       userId: req.user.userId,
       type: 'debit',
       title: `Money Sent ✓`,
       message: `₹${transferAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })} sent to ${toAccount.accountName} (${toAccountNumber.slice(-4).padStart(toAccountNumber.length, '*')}). Txn ID: ${txn.transactionId}`,
       icon: 'send',
-      transactionId: txn.id
+      transactionId: txn._id.toString()
     });
 
     // Receiver notification
     if (receiverUser) {
-      Notifications.create({
-        userId: receiverUser.id,
+      await Notifications.create({
+        userId: receiverUser._id,
         type: 'credit',
         title: `Money Received 💰`,
         message: `₹${transferAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })} received from ${fromAccount.accountName}. Txn ID: ${txn.transactionId}`,
         icon: 'download',
-        transactionId: txn.id
+        transactionId: txn._id.toString()
       });
     }
 
     // ── Real-time WebSocket broadcast ────────────────────────────────────────
     const broadcast = req.app.locals.broadcastToAccount;
     if (broadcast) {
-      const updatedFrom = Accounts.findById(fromAccountId);
-      const updatedTo = Accounts.findById(toAccount.id);
+      const updatedFrom = await Accounts.findById(fromAccountId);
+      const updatedTo = await Accounts.findById(toAccount._id);
 
       // Notify sender
       broadcast(fromAccountId, {
@@ -145,17 +146,17 @@ router.post('/transfer', authMiddleware, async (req, res) => {
       });
 
       // Notify receiver (use their primary accountId)
-      broadcast(toAccount.id, {
+      broadcast(toAccount._id.toString(), {
         type: 'transaction',
         event: 'credit',
         transaction: txn,
         newBalance: updatedTo.balance,
-        accountId: toAccount.id,
+        accountId: toAccount._id.toString(),
         message: `₹${transferAmount.toLocaleString('en-IN')} received from ${fromAccount.accountName}`
       });
     }
 
-    const updatedFromAccount = Accounts.findById(fromAccountId);
+    const updatedFromAccount = await Accounts.findById(fromAccountId);
     res.json({
       message: 'Transfer successful',
       transaction: txn,
@@ -170,87 +171,108 @@ router.post('/transfer', authMiddleware, async (req, res) => {
 });
 
 // GET /api/transactions - Get user's transactions
-router.get('/', authMiddleware, (req, res) => {
-  const accounts = Accounts.findByUserId(req.user.userId);
-  const limit = parseInt(req.query.limit) || 50;
+router.get('/', authMiddleware, async (req, res) => {
+  try {
+    const accounts = await Accounts.findByUserId(req.user.userId);
+    const limit = parseInt(req.query.limit) || 50;
 
-  let allTxns = [];
-  accounts.forEach(acc => {
-    const txns = Transactions.findByAccountId(acc.id, limit);
-    allTxns.push(...txns);
-  });
+    let allTxns = [];
+    for (const acc of accounts) {
+      const txns = await Transactions.findByAccountId(acc._id.toString(), limit);
+      allTxns.push(...txns);
+    }
 
-  // Deduplicate by id and sort
-  const seen = new Set();
-  const unique = allTxns.filter(t => {
-    if (seen.has(t.id)) return false;
-    seen.add(t.id);
-    return true;
-  }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, limit);
+    // Deduplicate and sort
+    const unique = Array.from(new Set(allTxns.map(t => t._id.toString())))
+      .map(id => allTxns.find(t => t._id.toString() === id))
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, limit);
 
-  res.json({ transactions: unique });
+    res.json({ transactions: unique });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch transactions' });
+  }
 });
 
 // GET /api/transactions/:id - Get specific transaction
-router.get('/:id', authMiddleware, (req, res) => {
-  const txn = Transactions.findById(req.params.id);
-  if (!txn) return res.status(404).json({ error: 'Transaction not found' });
+router.get('/:id', authMiddleware, async (req, res) => {
+  try {
+    const txn = await Transactions.findById(req.params.id);
+    if (!txn) return res.status(404).json({ error: 'Transaction not found' });
 
-  const accounts = Accounts.findByUserId(req.user.userId);
-  const accountIds = accounts.map(a => a.id);
-  if (!accountIds.includes(txn.fromAccountId) && !accountIds.includes(txn.toAccountId)) {
-    return res.status(403).json({ error: 'Unauthorized' });
+    const accounts = await Accounts.findByUserId(req.user.userId);
+    const accountIds = accounts.map(a => a._id.toString());
+    if (!accountIds.includes(txn.fromAccountId) && !accountIds.includes(txn.toAccountId)) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    res.json({ transaction: txn });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch transaction' });
   }
-
-  res.json({ transaction: txn });
 });
 
 // GET /api/transactions/verify-account/:accountNumber - Verify before transfer
-router.get('/verify-account/:accountNumber', authMiddleware, (req, res) => {
-  const account = Accounts.findByAccountNumber(req.params.accountNumber);
-  if (!account || account.status !== 'active') {
-    return res.status(404).json({ error: 'Account not found or inactive' });
+router.get('/verify-account/:accountNumber', authMiddleware, async (req, res) => {
+  try {
+    const account = await Accounts.findByAccountNumber(req.params.accountNumber);
+    if (!account || account.status !== 'active') {
+      return res.status(404).json({ error: 'Account not found or inactive' });
+    }
+    res.json({
+      verified: true,
+      accountHolderName: account.accountName,
+      accountNumber: account.accountNumber,
+      ifscCode: account.ifscCode
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Verification failed' });
   }
-  // Don't expose full account details - just name for verification
-  res.json({
-    verified: true,
-    accountHolderName: account.accountName,
-    accountNumber: account.accountNumber,
-    ifscCode: account.ifscCode
-  });
 });
 
 // GET /api/transactions/beneficiaries/list
-router.get('/beneficiaries/list', authMiddleware, (req, res) => {
-  const beneficiaries = Beneficiaries.findByUserId(req.user.userId);
-  res.json({ beneficiaries });
+router.get('/beneficiaries/list', authMiddleware, async (req, res) => {
+  try {
+    const beneficiaries = await Beneficiaries.findByUserId(req.user.userId);
+    res.json({ beneficiaries });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch beneficiaries' });
+  }
 });
 
 // POST /api/transactions/beneficiaries/add
-router.post('/beneficiaries/add', authMiddleware, (req, res) => {
-  const { accountNumber, accountHolderName, ifscCode, bankName, nickname } = req.body;
-  if (!accountNumber || !accountHolderName) {
-    return res.status(400).json({ error: 'Account number and holder name required' });
-  }
-  const account = Accounts.findByAccountNumber(accountNumber);
-  if (!account) return res.status(404).json({ error: 'Account not found' });
+router.post('/beneficiaries/add', authMiddleware, async (req, res) => {
+  try {
+    const { accountNumber, accountHolderName, ifscCode, bankName, nickname } = req.body;
+    if (!accountNumber || !accountHolderName) {
+      return res.status(400).json({ error: 'Account number and holder name required' });
+    }
+    const account = await Accounts.findByAccountNumber(accountNumber);
+    if (!account) return res.status(404).json({ error: 'Account not found' });
 
-  const ben = Beneficiaries.create({
-    userId: req.user.userId,
-    accountNumber,
-    accountHolderName: accountHolderName || account.accountName,
-    ifscCode: ifscCode || 'NEXB0001234',
-    bankName: bankName || 'NexBank',
-    nickname: nickname || accountHolderName
-  });
-  res.status(201).json({ message: 'Beneficiary added', beneficiary: ben });
+    const ben = await Beneficiaries.create({
+      userId: req.user.userId,
+      accountNumber,
+      accountHolderName: accountHolderName || account.accountName,
+      ifscCode: ifscCode || 'NEXB0001234',
+      bankName: bankName || 'NexBank',
+      nickname: nickname || accountHolderName
+    });
+    res.status(201).json({ message: 'Beneficiary added', beneficiary: ben });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to add beneficiary' });
+  }
 });
 
 // DELETE /api/transactions/beneficiaries/:id
-router.delete('/beneficiaries/:id', authMiddleware, (req, res) => {
-  const deleted = Beneficiaries.delete(req.params.id, req.user.userId);
-  if (!deleted) return res.status(404).json({ error: 'Beneficiary not found' });
-  res.json({ message: 'Beneficiary removed' });
+router.delete('/beneficiaries/:id', authMiddleware, async (req, res) => {
+  try {
+    const deleted = await Beneficiaries.delete(req.params.id, req.user.userId);
+    if (!deleted) return res.status(404).json({ error: 'Beneficiary not found' });
+    res.json({ message: 'Beneficiary removed' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to remove beneficiary' });
+  }
 });
 
 module.exports = router;

@@ -36,16 +36,20 @@ router.post('/register', async (req, res) => {
     if (password.length < 8) {
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
     }
-    if (Users.findByEmail(email)) {
+    
+    const existingEmail = await Users.findByEmail(email);
+    if (existingEmail) {
       return res.status(409).json({ error: 'Email already registered' });
     }
-    if (Users.findByPhone(phone)) {
+    
+    const existingPhone = await Users.findByPhone(phone);
+    if (existingPhone) {
       return res.status(409).json({ error: 'Phone number already registered' });
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
 
-    const user = Users.create({
+    const user = await Users.create({
       firstName, lastName, email: email.toLowerCase(), phone,
       passwordHash, dateOfBirth, address, gender,
       panNumber: panNumber || null, aadharNumber: aadharNumber || null,
@@ -53,8 +57,8 @@ router.post('/register', async (req, res) => {
     });
 
     // Auto-create Savings Account
-    const account = Accounts.create({
-      userId: user.id,
+    const account = await Accounts.create({
+      userId: user._id,
       accountType: 'savings',
       accountName: `${firstName} ${lastName}`,
       balance: 1000.00, // ₹1000 welcome bonus
@@ -67,9 +71,9 @@ router.post('/register', async (req, res) => {
     });
 
     // Create virtual debit card
-    Cards.create({
-      userId: user.id,
-      accountId: account.id,
+    await Cards.create({
+      userId: user._id,
+      accountId: account._id,
       cardType: 'debit',
       cardNetwork: 'Visa',
       cardNumber: generateCardNumber(),
@@ -83,8 +87,8 @@ router.post('/register', async (req, res) => {
     });
 
     // Welcome notification
-    Notifications.create({
-      userId: user.id,
+    await Notifications.create({
+      userId: user._id,
       type: 'welcome',
       title: 'Welcome to NexBank! 🎉',
       message: `Hello ${firstName}! Your account has been created successfully. Your Account Number is ${account.accountNumber}. We've added ₹1,000 as a welcome bonus!`,
@@ -92,12 +96,14 @@ router.post('/register', async (req, res) => {
     });
 
     const token = jwt.sign(
-      { userId: user.id, email: user.email, accountId: account.id },
+      { userId: user._id, email: user.email, accountId: account._id },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-    const { passwordHash: _, ...safeUser } = user;
+    const safeUser = user.toObject();
+    delete safeUser.passwordHash;
+
     res.status(201).json({
       message: 'Account created successfully',
       token,
@@ -117,10 +123,10 @@ router.post('/login', async (req, res) => {
 
     let user = null;
     if (email) {
-      user = Users.findByEmail(email);
+      user = await Users.findByEmail(email);
     } else if (accountNumber) {
-      const account = Accounts.findByAccountNumber(accountNumber);
-      if (account) user = Users.findById(account.userId);
+      const account = await Accounts.findByAccountNumber(accountNumber);
+      if (account) user = await Users.findById(account.userId);
     }
 
     if (!user) {
@@ -132,19 +138,21 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const accounts = Accounts.findByUserId(user.id);
+    const accounts = await Accounts.findByUserId(user._id);
     const primaryAccount = accounts[0];
 
     const token = jwt.sign(
-      { userId: user.id, email: user.email, accountId: primaryAccount?.id },
+      { userId: user._id, email: user.email, accountId: primaryAccount?._id },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
 
     // Update last login
-    Users.update(user.id, { lastLogin: new Date().toISOString() });
+    await Users.update(user._id, { lastLogin: new Date() });
 
-    const { passwordHash: _, ...safeUser } = user;
+    const safeUser = user.toObject();
+    delete safeUser.passwordHash;
+
     res.json({
       message: 'Login successful',
       token,
@@ -162,7 +170,7 @@ const authMiddleware = require('../middleware/auth');
 router.post('/change-password', authMiddleware, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    const user = Users.findById(req.user.userId);
+    const user = await Users.findById(req.user.userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
@@ -170,10 +178,10 @@ router.post('/change-password', authMiddleware, async (req, res) => {
     if (newPassword.length < 8) return res.status(400).json({ error: 'New password must be at least 8 characters' });
 
     const newHash = await bcrypt.hash(newPassword, 12);
-    Users.update(user.id, { passwordHash: newHash });
+    await Users.update(user._id, { passwordHash: newHash });
 
-    Notifications.create({
-      userId: user.id,
+    await Notifications.create({
+      userId: user._id,
       type: 'security',
       title: 'Password Changed',
       message: 'Your account password has been successfully changed.',
@@ -187,12 +195,19 @@ router.post('/change-password', authMiddleware, async (req, res) => {
 });
 
 // GET /api/auth/me
-router.get('/me', authMiddleware, (req, res) => {
-  const user = Users.findById(req.user.userId);
-  if (!user) return res.status(404).json({ error: 'User not found' });
-  const { passwordHash: _, ...safeUser } = user;
-  const accounts = Accounts.findByUserId(user.id);
-  res.json({ user: safeUser, accounts });
+router.get('/me', authMiddleware, async (req, res) => {
+  try {
+    const user = await Users.findById(req.user.userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    const safeUser = user.toObject();
+    delete safeUser.passwordHash;
+    
+    const accounts = await Accounts.findByUserId(user._id);
+    res.json({ user: safeUser, accounts });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch user data' });
+  }
 });
 
 module.exports = router;
