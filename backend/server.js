@@ -17,8 +17,8 @@ const adminRoutes = require('./routes/admin');
 
 const { connectDB } = require('./models/db');
 
-// Connect to Database
-connectDB();
+// Connect to Database and pre-warm
+connectDB().then(() => console.log('🔥 Connection Warmed Up')).catch(err => console.error('Warmup failed', err));
 
 const app = express();
 app.set('trust proxy', 1); // Required for Vercel/Rate-limit
@@ -81,7 +81,7 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Serve static frontend files
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -98,7 +98,7 @@ app.get('/api/health', (req, res) => {
 
 // Serve frontend for all other routes
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, '../frontend', 'index.html'));
 });
 
 // Error handler

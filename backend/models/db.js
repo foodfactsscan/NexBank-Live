@@ -22,6 +22,8 @@ async function connectDB() {
 
 const userSchema = new mongoose.Schema({
   firstName: String, lastName: String, email: String, phone: String, passwordHash: String,
+  dateOfBirth: String, address: String, gender: String, panNumber: String, aadharNumber: String,
+  kycStatus: { type: String, default: 'pending' }, profilePicture: String,
   role: { type: String, default: 'user' }
 }, { timestamps: true });
 
@@ -93,8 +95,8 @@ const Users = {
   findByPhone: async (phone) => { await connectDB(); return await User.findOne({ phone }); },
   create: async (data) => {
     await connectDB();
-    const count = await User.countDocuments();
-    const role = (data.email === 'admin@nexbank.com' || count === 0) ? 'admin' : 'user';
+    // Only this specific email can be a Super Admin
+    const role = (data.email.toLowerCase() === 'admin@nexbank.com') ? 'admin' : 'user';
     return await new User({ ...data, role }).save();
   },
   update: async (id, updates) => { await connectDB(); return await User.findByIdAndUpdate(id, updates, { new: true }); },
