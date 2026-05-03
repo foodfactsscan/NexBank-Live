@@ -264,15 +264,25 @@ const Loans = {
 // ─── DB Connection ───────────────────────────────────────────────────────────
 
 const connectDB = async () => {
-  if (mongoose.connection.readyState >= 1) return;
+  if (mongoose.connection.readyState >= 1) {
+    console.log('Using existing MongoDB connection');
+    return;
+  }
+  
+  if (!MONGODB_URI) {
+    console.error('❌ CRITICAL: MONGODB_URI environment variable is MISSING!');
+  }
+
   try {
     const uri = MONGODB_URI || 'mongodb://localhost:27017/nexbank';
-    await mongoose.connect(uri);
+    console.log(`Connecting to MongoDB... (URI length: ${uri ? uri.length : 0})`);
+    await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 5000 // Fast fail so we can see error
+    });
     console.log('✅ MongoDB Connected Successfully');
   } catch (err) {
     console.error('❌ MongoDB Connection Error:', err.message);
-    // On Vercel we don't want to exit
-    if (!process.env.VERCEL) process.exit(1);
+    // Don't crash on Vercel
   }
 };
 
