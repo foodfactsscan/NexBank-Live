@@ -375,8 +375,47 @@ const Auth = {
       }
     };
     window.requestAnimationFrame(step);
+  },
+
+  initGestures() {
+    let touchstartX = 0;
+    let touchendX = 0;
+    let touchstartY = 0;
+    let touchendY = 0;
+
+    document.addEventListener('touchstart', e => {
+      touchstartX = e.changedTouches[0].screenX;
+      touchstartY = e.changedTouches[0].screenY;
+    }, false);
+
+    document.addEventListener('touchend', e => {
+      touchendX = e.changedTouches[0].screenX;
+      touchendY = e.changedTouches[0].screenY;
+      this.handleGesture(touchstartX, touchendX, touchstartY, touchendY);
+    }, false);
+  },
+
+  handleGesture(x1, x2, y1, y2) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    
+    // Horizontal swipe
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 100) {
+      if (dx > 0) {
+        // Swipe Right - Maybe go to previous tab?
+      } else {
+        // Swipe Left - Go to next tab?
+      }
+    }
+    
+    // Flip card on swipe up/down if over a card
+    const target = document.querySelector('.flip-card-inner');
+    if (target && Math.abs(dy) > 50) {
+      target.style.transform = target.style.transform === 'rotateY(180deg)' ? 'rotateY(0deg)' : 'rotateY(180deg)';
+    }
   }
 };
 
 // Initialize app
 App.init();
+App.initGestures();

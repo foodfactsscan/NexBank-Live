@@ -122,10 +122,10 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 
 ### Phase 4 — Mobile Responsiveness
 
-- [ ] Bottom navigation bar on mobile (like SBI YONO)
-- [ ] Touch-friendly card swipe
-- [ ] Responsive sidebar → bottom sheet on mobile
-- [ ] Full touch gesture support
+- [x] Bottom navigation bar on mobile (like SBI YONO)
+- [x] Touch-friendly card swipe
+- [x] Responsive sidebar → bottom sheet on mobile
+- [x] Full touch gesture support
 
 ---
 

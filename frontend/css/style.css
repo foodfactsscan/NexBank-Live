@@ -385,10 +385,10 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin:8p
 
 /* ── Responsive ──────────────────────────────── */
 @media(max-width:768px){
-  .sidebar{transform:translateX(-100%)}
-  .sidebar.open{transform:translateX(0)}
+  .sidebar{transform:translateY(100%); width: 100%; height: auto; max-height: 80vh; bottom: 0; top: auto; border-radius: 24px 24px 0 0; border-top: 1px solid var(--border); border-right: none;}
+  .sidebar.open{transform:translateY(0)}
   .sidebar-close{display:flex}
-  .sidebar-overlay.open{display:block}
+  .sidebar-overlay.open{display:block; opacity: 1;}
   .hamburger{display:flex}
   .main-content{margin-left:0}
   .auth-left{display:none}
