@@ -2,20 +2,7 @@ const Pages = {
   // ── Dashboard ─────────────────────────────────────────────────────────────
   renderDashboard: async () => {
     const main = document.getElementById('view-dashboard');
-    
-    // 1. Instant UI Shell (So the user never sees a hang)
-    main.innerHTML = `
-      <div class="section-title"><i class="fa fa-th-large"></i> Dashboard Overview</div>
-      <div class="grid-3 mb-20">
-        <div class="balance-card">
-          <div class="balance-label">Available Balance</div>
-          <div class="balance-amount"><i class="fa fa-spinner spin" style="font-size:1.5rem"></i></div>
-          <div class="balance-acc">Waking up database...</div>
-        </div>
-      </div>
-      <div class="empty-state"><p>Syncing your financial data...</p></div>
-    `;
-
+    main.innerHTML = `<div class="empty-state"><i class="fa fa-spinner spin"></i><p>Loading dashboard...</p></div>`;
     try {
       const res = await Api.me();
       const acc = res.accounts[0];
