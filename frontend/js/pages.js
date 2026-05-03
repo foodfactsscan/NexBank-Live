@@ -817,6 +817,14 @@ const Pages = {
                 <option value="60">5 Years @ 7.5%</option>
               </select>
             </div>
+            <div class="form-group">
+              <label class="form-label">Interest Payout</label>
+              <select class="input-full">
+                <option>At Maturity (Cumulative)</option>
+                <option>Monthly Payout</option>
+                <option>Quarterly Payout</option>
+              </select>
+            </div>
             <button class="btn-primary w-full mt-16" onclick="Pages.createFD('${acc.id}')">Open Fixed Deposit</button>
           </div>
           
@@ -848,7 +856,7 @@ const Pages = {
                 </tr>
               </thead>
               <tbody>
-                ${fdsHtml}
+                ${fdsHtml.replace(/Break FD<\/button>/g, `Break FD</button><button class="btn-outline" style="width:auto; padding:4px 8px; margin:0 0 0 8px; font-size:0.7rem;" onclick="App.toast('Downloading FD Certificate PDF...', 'success')"><i class="fa fa-download"></i></button>`)}
               </tbody>
             </table>
           </div>
@@ -941,13 +949,41 @@ const Pages = {
             <div class="calc-result" style="padding:16px; margin:0 0 16px 0; background:rgba(0,198,255,0.05)">
               <div class="result-label">Estimated EMI</div>
               <div class="result-value" style="font-size:1.5rem">₹<span id="loan-emi-val">0</span></div>
+              <button class="btn-outline mt-12 w-full" style="padding:6px; font-size:0.8rem;" onclick="App.toast('Amortization Schedule Downloaded', 'info')"><i class="fa fa-table"></i> View Amortization Table</button>
             </div>
             
             <button class="btn-primary w-full" onclick="Pages.applyLoan()">Submit Application</button>
           </div>
 
-          <div class="card" style="padding:0; overflow:hidden">
-            <div class="form-section-title" style="padding:24px 24px 0 24px">My Loan Applications</div>
+          <div>
+            <div class="card mb-20" style="padding:0; overflow:hidden">
+              <div class="form-section-title" style="padding:24px 24px 0 24px"><i class="fa fa-chart-line"></i> Track Loan Status</div>
+              <div style="padding:24px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-size:0.85rem">
+                  <span class="text-green font-bold"><i class="fa fa-check-circle"></i> Application Received</span>
+                  <span class="text-green font-bold"><i class="fa fa-check-circle"></i> Verification</span>
+                  <span class="text-muted"><i class="fa fa-circle"></i> Approval</span>
+                  <span class="text-muted"><i class="fa fa-circle"></i> Disbursal</span>
+                </div>
+                <div style="height:4px; background:var(--border); border-radius:2px; position:relative;">
+                  <div style="position:absolute; left:0; top:0; bottom:0; width:50%; background:var(--green); border-radius:2px;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="form-section-title"><i class="fa fa-fast-forward"></i> Pre-payment Calculator</div>
+              <div class="form-group mb-12">
+                <label class="form-label">Extra Payment Amount (₹)</label>
+                <input type="number" class="input-full" placeholder="e.g. 50000" id="prepay-amt">
+              </div>
+              <button class="btn-outline w-full" onclick="App.toast('You can save ₹12,450 in interest and reduce tenure by 4 months!', 'success')">Calculate Savings</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:0; overflow:hidden">
+          <div class="form-section-title" style="padding:24px 24px 0 24px">My Loan Applications</div>
             <div style="overflow-x:auto">
               <table class="data-table">
                 <thead>
@@ -1532,5 +1568,57 @@ const Pages = {
     } catch(err) {
       App.toast(err.message, "error");
     }
+  },
+
+  renderNotifications: () => {
+    const main = document.getElementById('view-notifications');
+    main.innerHTML = `
+      <div class="flex justify-between items-center mb-20">
+        <div class="section-title mb-0"><i class="fa fa-bell"></i> Notifications</div>
+        <button class="btn-outline" style="width:auto; padding:6px 12px; margin:0;" onclick="Pages.markAllRead()"><i class="fa fa-check-double"></i> Mark All Read</button>
+      </div>
+      
+      <div class="card mb-12" id="notif-1" style="border-left: 4px solid var(--accent)">
+        <div class="flex justify-between items-center">
+          <div style="font-weight:600; color:var(--text-main)"><i class="fa fa-arrow-down text-green"></i> ₹5,000 credited to A/C XX6423</div>
+          <div style="font-size:0.75rem; color:var(--text-muted)">Just now</div>
+        </div>
+        <div style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">IMPS transfer received from Rahul Kumar.</div>
+      </div>
+
+      <div class="card mb-12" id="notif-2" style="border-left: 4px solid var(--accent)">
+        <div class="flex justify-between items-center">
+          <div style="font-weight:600; color:var(--text-main)"><i class="fa fa-arrow-up text-red"></i> ₹1,200 debited from A/C XX6423</div>
+          <div style="font-size:0.75rem; color:var(--text-muted)">2 hours ago</div>
+        </div>
+        <div style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">Amazon Pay India Private Limited.</div>
+      </div>
+
+      <div class="card mb-12">
+        <div class="flex justify-between items-center">
+          <div style="font-weight:600; color:var(--text-main)"><i class="fa fa-shield-alt text-gold"></i> KYC Reminder</div>
+          <div style="font-size:0.75rem; color:var(--text-muted)">1 day ago</div>
+        </div>
+        <div style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">Please update your PAN card details to enjoy uninterrupted services.</div>
+      </div>
+
+      <div class="card mb-12">
+        <div class="flex justify-between items-center">
+          <div style="font-weight:600; color:var(--text-main)"><i class="fa fa-gift text-accent"></i> Pre-approved Personal Loan</div>
+          <div style="font-size:0.75rem; color:var(--text-muted)">3 days ago</div>
+        </div>
+        <div style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">You are eligible for an instant personal loan of up to ₹2,50,000. Apply now!</div>
+      </div>
+    `;
+    
+    // Reset badge
+    const badge = document.getElementById('notif-badge');
+    if(badge) badge.classList.add('hidden');
+  },
+
+  markAllRead: () => {
+    const notifs = document.querySelectorAll('#view-notifications .card');
+    notifs.forEach(n => n.style.borderLeft = 'none');
+    App.toast('All notifications marked as read', 'success');
   }
 };

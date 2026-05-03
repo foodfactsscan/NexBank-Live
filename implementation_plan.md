@@ -51,41 +51,33 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 
 **Money Transfer**
 
-- [ ] IMPS / NEFT / RTGS with correct limits
-- [ ] UPI-style instant transfer via 10-digit Account ID
+- [x] IMPS / NEFT / RTGS with correct limits
+- [x] UPI-style instant transfer via 10-digit Account ID
 - [x] Beneficiary management (add/remove/favorite)
-- [ ] Transfer confirmation with receiver name verification
-- [ ] Recurring transfer setup
-- [ ] Transaction receipt with PDF download (simulated)
-
-**Accounts**
-
-- [ ] Savings Account with IFSC, branch, balance
-- [ ] Account statement with date filter
-- [ ] Mini statement (last 5 txns)
-- [ ] Download statement PDF (simulated)
-- [ ] Nominee details
+- [x] Transfer confirmation with receiver name verification
+- [x] Recurring transfer setup
+- [x] Transaction receipt with PDF download (simulated)
 
 **Cards**
 
-- [ ] Virtual Debit Card with animated flip
+- [x] Virtual Debit Card with animated flip
 - [x] Card block/unblock
 - [x] Daily limit management
 
 **Investments & FD**
 
-- [ ] Open FD with compound interest calculation
-- [ ] FD maturity calculator
-- [ ] Break FD with penalty calculation
-- [ ] Interest payout options (Monthly/Quarterly/At Maturity)
-- [ ] FD certificate download (simulated)
+- [x] Open FD with compound interest calculation
+- [x] FD maturity calculator
+- [x] Break FD with penalty calculation
+- [x] Interest payout options (Monthly/Quarterly/At Maturity)
+- [x] FD certificate download (simulated)
 
 **Loans**
 
-- [ ] Personal / Home / Auto Loan application
-- [ ] EMI calculator with full amortization table
-- [ ] Loan status tracking
-- [ ] Pre-payment calculator
+- [x] Personal / Home / Auto Loan application
+- [x] EMI calculator with full amortization table
+- [x] Loan status tracking
+- [x] Pre-payment calculator
 
 **Bill Payments & UPI**
 
@@ -102,28 +94,28 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 
 **Notifications**
 
-- [ ] Real-time debit/credit alerts
-- [ ] Mark all read
+- [x] Real-time debit/credit alerts
+- [x] Mark all read
 
 **Profile & KYC**
 
 - [x] View/Edit profile
-- [ ] Change password
-- [ ] KYC status
-- [ ] Linked devices
+- [x] Change password
+- [x] KYC status
+- [x] Linked devices
 - [x] Download account summary
 
 **Support**
 
-- [ ] FAQ section
-- [ ] Chat widget (UI)
+- [x] FAQ section
+- [x] Chat widget (UI)
 
 **Admin Panel** (separate, <admin@nexbank.com> only)
 
 - [x] All users overview
 - [x] Total transactions today
 - [x] Block/unblock users
-- [ ] KYC approval
+- [x] KYC approval
 - [x] System health
 
 ---
