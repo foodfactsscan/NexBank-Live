@@ -187,9 +187,7 @@ const Pages = {
         }
       }
 
-      // Animate Balance
       App.animateValue(document.getElementById('dash-bal'), 0, acc.balance, 1200);
-      }
     } catch(err) {
       main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error loading dashboard: ${err.message}</p></div>`;
     }
