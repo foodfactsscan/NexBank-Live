@@ -21,6 +21,7 @@ const { connectDB } = require('./models/db');
 connectDB();
 
 const app = express();
+app.set('trust proxy', 1); // Required for Vercel/Rate-limit
 const server = http.createServer(app);
 
 // WebSocket Server for real-time updates
