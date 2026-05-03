@@ -1240,9 +1240,81 @@ const Pages = {
           </div>
         </div>
       </div>
+
+      <div class="grid-2 mt-20">
+        <!-- SIP Calculator -->
+        <div class="card">
+          <div class="form-section-title"><i class="fa fa-chart-pie"></i> SIP Calculator</div>
+          <div class="form-group">
+            <label class="form-label">Monthly Investment (₹)</label>
+            <input type="number" id="calc-sip-amt" class="input-full" value="5000" oninput="Pages.runCalc('sip')">
+          </div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Expected Return (%)</label>
+              <input type="number" id="calc-sip-rate" class="input-full" value="12" step="0.1" oninput="Pages.runCalc('sip')">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Time Period (Years)</label>
+              <input type="number" id="calc-sip-years" class="input-full" value="10" oninput="Pages.runCalc('sip')">
+            </div>
+          </div>
+          <div class="calc-result" style="padding:16px; margin:0; background:rgba(255,215,0,0.05); border-radius:8px;">
+            <div class="result-label">Total Value</div>
+            <div class="result-value text-gold" style="font-size:1.5rem; font-weight:700;">₹<span id="calc-sip-res">11,61,695</span></div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Amount Invested: ₹<span id="calc-sip-inv">6,00,000</span></div>
+          </div>
+        </div>
+
+        <!-- Tax Calculator -->
+        <div class="card">
+          <div class="form-section-title"><i class="fa fa-file-invoice-dollar"></i> Income Tax Calculator</div>
+          <div class="form-group">
+            <label class="form-label">Annual Income (₹)</label>
+            <input type="number" id="calc-tax-inc" class="input-full" value="1200000" oninput="Pages.runCalc('tax')">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Deductions (80C, etc) (₹)</label>
+            <input type="number" id="calc-tax-ded" class="input-full" value="150000" oninput="Pages.runCalc('tax')">
+          </div>
+          <div class="calc-result" style="padding:16px; margin:0; background:rgba(255,82,82,0.05); border-radius:8px;">
+            <div class="result-label">Estimated Tax (Old Regime)</div>
+            <div class="result-value text-red" style="font-size:1.5rem; font-weight:700;">₹<span id="calc-tax-res">1,32,600</span></div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">New Regime Tax: ₹<span id="calc-tax-new">93,600</span></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="grid-2 mt-20">
+        <!-- Inflation Calculator -->
+        <div class="card">
+          <div class="form-section-title"><i class="fa fa-level-up-alt"></i> Inflation / Future Value</div>
+          <div class="form-group">
+            <label class="form-label">Current Cost (₹)</label>
+            <input type="number" id="calc-inf-amt" class="input-full" value="100000" oninput="Pages.runCalc('inf')">
+          </div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Inflation Rate (%)</label>
+              <input type="number" id="calc-inf-rate" class="input-full" value="6" step="0.1" oninput="Pages.runCalc('inf')">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Years from now</label>
+              <input type="number" id="calc-inf-years" class="input-full" value="10" oninput="Pages.runCalc('inf')">
+            </div>
+          </div>
+          <div class="calc-result" style="padding:16px; margin:0; background:rgba(0,198,255,0.05); border-radius:8px;">
+            <div class="result-label">Future Cost</div>
+            <div class="result-value text-accent" style="font-size:1.5rem; font-weight:700;">₹<span id="calc-inf-res">1,79,085</span></div>
+          </div>
+        </div>
+      </div>
     `;
     Pages.runCalc('emi');
     Pages.runCalc('fd');
+    Pages.runCalc('sip');
+    Pages.runCalc('tax');
+    Pages.runCalc('inf');
   },
 
   runCalc: (type) => {
@@ -1266,6 +1338,54 @@ const Pages = {
         const maturity = p * Math.pow(1 + (r / 100) / 4, 4 * t);
         document.getElementById('calc-fd-res').textContent = maturity.toLocaleString('en-IN', {maximumFractionDigits:0});
         document.getElementById('calc-fd-int').textContent = (maturity - p).toLocaleString('en-IN', {maximumFractionDigits:0});
+      }
+    } else if (type === 'sip') {
+      const p = parseFloat(document.getElementById('calc-sip-amt').value) || 0;
+      const r = parseFloat(document.getElementById('calc-sip-rate').value) || 0;
+      const t = parseFloat(document.getElementById('calc-sip-years').value) || 0;
+      if(p>0 && r>0 && t>0) {
+        const i = r / 100 / 12;
+        const n = t * 12;
+        const maturity = p * ((Math.pow(1 + i, n) - 1) / i) * (1 + i);
+        document.getElementById('calc-sip-res').textContent = maturity.toLocaleString('en-IN', {maximumFractionDigits:0});
+        document.getElementById('calc-sip-inv').textContent = (p * n).toLocaleString('en-IN', {maximumFractionDigits:0});
+      }
+    } else if (type === 'tax') {
+      const inc = parseFloat(document.getElementById('calc-tax-inc').value) || 0;
+      const ded = parseFloat(document.getElementById('calc-tax-ded').value) || 0;
+      
+      // Simple mockup calculation
+      let oldTax = 0;
+      let taxableOld = Math.max(0, inc - ded - 50000); // 50k standard ded
+      if (taxableOld > 1000000) oldTax = 112500 + (taxableOld - 1000000) * 0.3;
+      else if (taxableOld > 500000) oldTax = 12500 + (taxableOld - 500000) * 0.2;
+      else if (taxableOld > 250000) oldTax = (taxableOld - 250000) * 0.05;
+      
+      let newTax = 0;
+      let taxableNew = Math.max(0, inc - 50000); // 50k standard ded
+      if (taxableNew > 1500000) newTax = 150000 + (taxableNew - 1500000) * 0.3;
+      else if (taxableNew > 1200000) newTax = 90000 + (taxableNew - 1200000) * 0.2;
+      else if (taxableNew > 900000) newTax = 45000 + (taxableNew - 900000) * 0.15;
+      else if (taxableNew > 600000) newTax = 15000 + (taxableNew - 600000) * 0.1;
+      else if (taxableNew > 300000) newTax = (taxableNew - 300000) * 0.05;
+      
+      // Rebate 87A (Simplified)
+      if(taxableOld <= 500000) oldTax = 0;
+      if(taxableNew <= 700000) newTax = 0;
+      
+      // Cess
+      oldTax = oldTax * 1.04;
+      newTax = newTax * 1.04;
+
+      document.getElementById('calc-tax-res').textContent = oldTax.toLocaleString('en-IN', {maximumFractionDigits:0});
+      document.getElementById('calc-tax-new').textContent = newTax.toLocaleString('en-IN', {maximumFractionDigits:0});
+    } else if (type === 'inf') {
+      const p = parseFloat(document.getElementById('calc-inf-amt').value) || 0;
+      const r = parseFloat(document.getElementById('calc-inf-rate').value) || 0;
+      const t = parseFloat(document.getElementById('calc-inf-years').value) || 0;
+      if(p>0 && r>0 && t>0) {
+        const fv = p * Math.pow(1 + r/100, t);
+        document.getElementById('calc-inf-res').textContent = fv.toLocaleString('en-IN', {maximumFractionDigits:0});
       }
     }
   },

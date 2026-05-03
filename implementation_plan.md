@@ -94,11 +94,11 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 
 **Calculators**
 
-- [ ] EMI Calculator (with amortization)
-- [ ] FD/RD Calculator
-- [ ] SIP Calculator
-- [ ] Tax Calculator (Old vs New Regime)
-- [ ] Inflation/Future Value Calculator
+- [x] EMI Calculator (with amortization)
+- [x] FD/RD Calculator
+- [x] SIP Calculator
+- [x] Tax Calculator (Old vs New Regime)
+- [x] Inflation/Future Value Calculator
 
 **Notifications**
 
