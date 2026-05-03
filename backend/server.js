@@ -23,7 +23,7 @@ const userRoutes = require('./routes/users');
 const notificationRoutes = require('./routes/notifications');
 const adminRoutes = require('./routes/admin');
 
-const { connectDB } = require('./models/db');
+const { connectDB, mongoose } = require('./models/db');
 
 // Connect to Database and pre-warm
 connectDB().then(() => console.log('🔥 Connection Warmed Up')).catch(err => console.error('Warmup failed', err));
@@ -99,6 +99,18 @@ app.use((req, res, next) => {
   next();
 });
 
+// Health Check
+app.get('/api/health', async (req, res) => {
+  const dbState = mongoose.connection.readyState;
+  const states = ['Disconnected', 'Connected', 'Connecting', 'Disconnecting'];
+  res.json({
+    status: dbState === 1 ? 'OK' : 'Error',
+    database: states[dbState],
+    env: missingEnv.length === 0 ? 'Loaded' : 'Missing Variables',
+    timestamp: new Date()
+  });
+});
+
 // Serve static frontend files
 app.use(express.static(path.join(__dirname, '../frontend')));
 
@@ -110,10 +122,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'NexBank API is running', timestamp: new Date().toISOString() });
-});
+
 
 // Serve frontend for all other routes
 app.get('*', (req, res) => {
