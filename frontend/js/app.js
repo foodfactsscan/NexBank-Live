@@ -3,9 +3,22 @@ const App = {
   user: null,
   accounts: [],
 
+  sessionTimeoutId: null,
+
   init() {
     this.setupListeners();
     this.checkAuth();
+  },
+
+  resetSessionTimeout() {
+    if (this.sessionTimeoutId) clearTimeout(this.sessionTimeoutId);
+    // 5 minutes timeout for security
+    this.sessionTimeoutId = setTimeout(() => {
+      if (this.user) {
+        Auth.logout();
+        this.toast('Session expired due to inactivity', 'warning');
+      }
+    }, 5 * 60 * 1000);
   },
 
   checkAuth() {
@@ -210,6 +223,13 @@ const App = {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') this.closeModal();
     });
+
+    // Session activity tracking
+    ['click', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(evt => {
+      document.addEventListener(evt, () => {
+        if (this.user) this.resetSessionTimeout();
+      });
+    });
   }
 };
 
@@ -261,6 +281,27 @@ const Auth = {
       btn.innerHTML = `<span>Login Securely</span><i class="fa fa-arrow-right"></i>`;
       btn.disabled = false;
     }
+  },
+
+  forgotPassword() {
+    App.showCustomModal(`
+      <h2 class="modal-title"><i class="fa fa-lock text-accent"></i> Reset Password</h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">
+        Enter your registered email address or account number to receive a secure password reset link.
+      </p>
+      <div class="form-group">
+        <label class="form-label">Email or Account Number</label>
+        <input type="text" id="reset-id" class="input-full" placeholder="john@example.com">
+      </div>
+      <button class="btn-primary w-full mt-20" onclick="Auth.submitForgotPassword()">Send Reset Link</button>
+    `);
+  },
+
+  submitForgotPassword() {
+    const val = document.getElementById('reset-id').value;
+    if (!val) return App.toast('Please enter your email or account number', 'error');
+    App.toast('A password reset link has been sent to your registered email.', 'success');
+    App.closeModal();
   },
 
   async register() {

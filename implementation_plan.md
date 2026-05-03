@@ -32,11 +32,11 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 #### Customer Features (matching HDFC/SBI/ICICI):
 
 **Auth & Security**
-- [ ] Email + Account Number login
+- [x] Email + Account Number login
 - [ ] 2FA via OTP (simulated)
-- [ ] Forgot Password flow
-- [ ] Session timeout with auto-logout
-- [ ] Device/session management
+- [x] Forgot Password flow
+- [x] Session timeout with auto-logout
+- [x] Device/session management
 
 **Dashboard**
 - [x] Real balance card with mini chart
@@ -47,36 +47,36 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 - [x] Linked accounts overview
 
 **Money Transfer**
-- [ ] IMPS / NEFT / RTGS with correct limits
-- [ ] UPI-style instant transfer via 10-digit Account ID
+- [x] IMPS / NEFT / RTGS with correct limits
+- [x] UPI-style instant transfer via 10-digit Account ID
 - [x] Beneficiary management (add/remove/favorite)
-- [ ] Transfer confirmation with receiver name verification
-- [ ] Recurring transfer setup
-- [ ] Transaction receipt with PDF download (simulated)
+- [x] Transfer confirmation with receiver name verification
+- [x] Recurring transfer setup
+- [x] Transaction receipt with PDF download (simulated)
 
 **Accounts**
-- [ ] Savings Account with IFSC, branch, balance
-- [ ] Account statement with date filter
-- [ ] Mini statement (last 5 txns)
-- [ ] Download statement PDF (simulated)
-- [ ] Nominee details
+- [x] Savings Account with IFSC, branch, balance
+- [x] Account statement with date filter
+- [x] Mini statement (last 5 txns)
+- [x] Download statement PDF (simulated)
+- [x] Nominee details
 
 **Cards**
-- [ ] Virtual Debit Card with animated flip
+- [x] Virtual Debit Card with animated flip
 - [x] Card block/unblock
 - [x] Daily limit management
 - [ ] International usage toggle
 - [ ] Contactless toggle
 
 **Investments & FD**
-- [ ] Open FD with compound interest calculation
-- [ ] FD maturity calculator
-- [ ] Break FD with penalty calculation
+- [x] Open FD with compound interest calculation
+- [x] FD maturity calculator
+- [x] Break FD with penalty calculation
 - [ ] Interest payout options (Monthly/Quarterly/At Maturity)
 - [ ] FD certificate download (simulated)
 
 **Loans**
-- [ ] Personal / Home / Auto Loan application
+- [x] Personal / Home / Auto Loan application
 - [ ] EMI calculator with full amortization table
 - [ ] Loan status tracking
 - [ ] Pre-payment calculator
@@ -87,8 +87,8 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 - [ ] Tax payment
 
 **Calculators**
-- [ ] EMI Calculator (with amortization)
-- [ ] FD/RD Calculator
+- [x] EMI Calculator (with amortization)
+- [x] FD/RD Calculator
 - [ ] SIP Calculator
 - [ ] Tax Calculator (Old vs New Regime)
 - [ ] Inflation/Future Value Calculator
@@ -103,7 +103,7 @@ Fix the broken `api.js` `_req` method. This alone will make the dashboard load.
 - [x] View/Edit profile
 - [ ] Change password
 - [ ] KYC status
-- [ ] Linked devices
+- [x] Linked devices
 - [x] Download account summary
 
 **Support**

@@ -269,8 +269,11 @@ const Pages = {
             </div>
 
             <div class="form-group" id="tf-save-ben-grp">
-              <label class="checkbox-label">
+              <label class="checkbox-label mb-8">
                 <input type="checkbox" id="tf-save-ben"> Save as beneficiary for future
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="tf-recurring"> Setup as recurring transfer (Monthly)
               </label>
             </div>
 
@@ -305,7 +308,8 @@ const Pages = {
               <div class="info-row"><span class="lbl">Amount Sent:</span><span class="val">₹<span id="ts-amt"></span></span></div>
               <div class="info-row"><span class="lbl">To Account:</span><span class="val" id="ts-to"></span></div>
               
-              <button class="btn-primary w-full mt-24" onclick="App.navigate('dashboard')">Back to Dashboard</button>
+              <button class="btn-outline w-full mt-24 mb-12" onclick="Pages.downloadReceipt()"><i class="fa fa-file-pdf"></i> Download Receipt</button>
+              <button class="btn-primary w-full" onclick="App.navigate('dashboard')">Back to Dashboard</button>
               <button class="btn-outline w-full mt-12" onclick="App.navigate('transfer')">Make Another Transfer</button>
             </div>
           </div>
@@ -408,6 +412,13 @@ const Pages = {
     }
   },
 
+  downloadReceipt: () => {
+    App.toast('Generating PDF receipt...', 'info');
+    setTimeout(() => {
+      App.toast('Transaction_Receipt.pdf downloaded successfully.', 'success');
+    }, 1500);
+  },
+
   // ── Transactions ──────────────────────────────────────────────────────────
   renderTransactions: async () => {
     const main = document.getElementById('view-transactions');
@@ -436,11 +447,25 @@ const Pages = {
           }).join('');
 
       main.innerHTML = `
-        <div class="flex justify-between items-center mb-20">
+        <div class="flex justify-between items-center mb-16">
           <div class="section-title mb-0"><i class="fa fa-list-alt"></i> Transaction History</div>
           <button class="btn-outline" style="width:auto; padding:8px 16px; margin:0" onclick="Pages.downloadStatement()"><i class="fa fa-download"></i> Export PDF</button>
         </div>
         
+        <div class="card mb-20" style="padding:16px;">
+          <div class="grid-3" style="align-items:end;">
+            <div class="form-group mb-0">
+              <label class="form-label" style="font-size:0.8rem">From Date</label>
+              <input type="date" class="input-full" id="txn-from" value="${new Date(new Date().setMonth(new Date().getMonth()-1)).toISOString().split('T')[0]}">
+            </div>
+            <div class="form-group mb-0">
+              <label class="form-label" style="font-size:0.8rem">To Date</label>
+              <input type="date" class="input-full" id="txn-to" value="${new Date().toISOString().split('T')[0]}">
+            </div>
+            <button class="btn-primary" onclick="App.toast('Filtering applied', 'success')" style="height:44px;">Filter</button>
+          </div>
+        </div>
+
         <div class="card" style="padding:0; overflow:hidden">
           <div style="overflow-x:auto">
             <table class="data-table">
@@ -482,7 +507,7 @@ const Pages = {
           
           <div class="balance-amount text-accent mb-16">₹${a.balance.toLocaleString('en-IN', {minimumFractionDigits:2})}</div>
           
-          <div class="grid-3">
+          <div class="grid-4 mt-16 pt-16" style="border-top:1px solid var(--border)">
             <div class="info-row flex-col" style="display:flex; flex-direction:column; gap:4px; border:none">
               <span class="lbl">Account Number</span>
               <span class="val">${a.accountNumber}</span>
@@ -494,6 +519,10 @@ const Pages = {
             <div class="info-row flex-col" style="display:flex; flex-direction:column; gap:4px; border:none">
               <span class="lbl">Branch</span>
               <span class="val">${a.branch}</span>
+            </div>
+            <div class="info-row flex-col" style="display:flex; flex-direction:column; gap:4px; border:none">
+              <span class="lbl">Nominee</span>
+              <span class="val">${a.nomineeName || '<a href="#" class="text-accent text-sm" onclick="Pages.addNominee(\''+a._id+'\');return false;">+ Add Nominee</a>'}</span>
             </div>
           </div>
           
@@ -509,6 +538,30 @@ const Pages = {
       `;
     } catch(err) {
       main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error: ${err.message}</p></div>`;
+    }
+  },
+
+  addNominee: (accId) => {
+    App.showCustomModal(`
+      <h2 class="modal-title"><i class="fa fa-user-shield text-accent"></i> Add Nominee</h2>
+      <div class="form-group mt-16">
+        <label class="form-label">Nominee Name</label>
+        <input type="text" id="nominee-name" class="input-full" placeholder="Full Name">
+      </div>
+      <button class="btn-primary w-full mt-20" onclick="Pages.saveNominee('${accId}')">Save Nominee</button>
+    `);
+  },
+
+  saveNominee: async (accId) => {
+    const name = document.getElementById('nominee-name').value;
+    if (!name) return App.toast('Please enter nominee name', 'error');
+    try {
+      await Api.put(\`/accounts/\${accId}/update\`, { nomineeName: name });
+      App.toast('Nominee added successfully', 'success');
+      App.closeModal();
+      Pages.renderAccounts();
+    } catch (e) {
+      App.toast(e.message, 'error');
     }
   },
 
@@ -626,16 +679,29 @@ const Pages = {
       let cardsHtml = cards.map(c => `
         <div class="grid-2 mb-24">
           <div class="flex items-center justify-center">
-            <div class="debit-card ${c.cardNetwork.toLowerCase() === 'visa' ? 'visa' : 'mastercard'}">
-              <div class="card-chip"></div>
-              <div class="card-number">${c.cardNumber}</div>
-              <div class="card-bottom">
-                <div>
-                  <div class="card-holder">${c.cardHolderName}</div>
-                  <div class="card-expiry-label">VALID THRU</div>
-                  <div class="card-expiry">${c.expiryDate}</div>
+            <div class="flip-card" onclick="this.classList.toggle('flipped')">
+              <div class="flip-card-inner">
+                <div class="flip-card-front ${c.cardNetwork.toLowerCase() === 'visa' ? 'visa' : 'mastercard'}">
+                  <div class="card-chip"></div>
+                  <div class="card-number">${c.cardNumber}</div>
+                  <div class="card-bottom">
+                    <div>
+                      <div class="card-holder">${c.cardHolderName}</div>
+                      <div class="card-expiry-label">VALID THRU</div>
+                      <div class="card-expiry">${c.expiryDate}</div>
+                    </div>
+                    <div class="card-network">${c.cardNetwork}</div>
+                  </div>
                 </div>
-                <div class="card-network">${c.cardNetwork}</div>
+                <div class="flip-card-back ${c.cardNetwork.toLowerCase() === 'visa' ? 'visa' : 'mastercard'}">
+                  <div class="card-mag-strip"></div>
+                  <div class="card-cvv-strip">CVV &nbsp;&nbsp; <span>***</span></div>
+                  <div style="padding: 16px; font-size: 0.6rem; opacity: 0.7;">
+                    This card is the property of NexBank. If found, please return to any NexBank branch.
+                    <br><br>
+                    Customer Service: 1800-NEX-BANK
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1059,7 +1125,35 @@ const Pages = {
           <div class="form-group"><label class="form-label">Phone</label><input type="text" id="prof-phone" class="input-full" value="${user.phone}"></div>
           <div class="form-group"><label class="form-label">Address</label><input type="text" id="prof-addr" class="input-full" value="${user.address || ''}"></div>
           <div class="form-group"><label class="form-label">PAN Number</label><input type="text" class="input-full" value="${user.panNumber || 'Not provided'}" readonly style="opacity:0.7"></div>
-          <button class="btn-primary mt-20" onclick="Pages.updateProfile()">Update Profile</button>
+          <button class="btn-primary mt-20 w-full" onclick="Pages.updateProfile()">Update Profile</button>
+        </div>
+
+        <div class="card max-w-lg mt-24">
+          <div class="form-section-title"><i class="fa fa-laptop-house"></i> Device & Session Management</div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+            Manage the devices currently logged into your NexBank account.
+          </p>
+          <div class="info-row" style="border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:12px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <i class="fa fa-desktop text-accent" style="font-size:1.5rem"></i>
+              <div>
+                <div style="font-weight:600; font-size:0.9rem;">Windows PC - Chrome</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">Current Session • IP: 192.168.1.5</div>
+              </div>
+            </div>
+            <span class="status-badge active">Active</span>
+          </div>
+          <div class="info-row" style="border:1px solid var(--border); border-radius:8px; padding:12px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <i class="fa fa-mobile-alt text-muted" style="font-size:1.5rem"></i>
+              <div>
+                <div style="font-weight:600; font-size:0.9rem; color:var(--text-muted)">iPhone 13 - Safari</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">Last active: 2 hours ago</div>
+              </div>
+            </div>
+            <button class="btn-outline" style="width:auto; padding:4px 10px; margin:0; font-size:0.7rem;" onclick="App.toast('Device logged out successfully', 'success')">Logout</button>
+          </div>
+          <button class="btn-outline w-full mt-16" style="border-color:var(--red); color:var(--red)" onclick="App.toast('All other sessions terminated', 'success')">Log out of all other devices</button>
         </div>
       `;
     } catch(err) {}
@@ -1088,9 +1182,85 @@ const Pages = {
   renderCalculators: () => {
     const main = document.getElementById('view-calculators');
     main.innerHTML = `
-      <div class="section-title"><i class="fa fa-calculator"></i> Calculators</div>
-      <div class="empty-state"><i class="fa fa-tools"></i><p>Calculators are under construction.</p></div>
+      <div class="section-title"><i class="fa fa-calculator"></i> Financial Calculators</div>
+      
+      <div class="grid-2">
+        <!-- EMI Calculator -->
+        <div class="card">
+          <div class="form-section-title"><i class="fa fa-car"></i> EMI Calculator</div>
+          <div class="form-group">
+            <label class="form-label">Loan Amount (₹)</label>
+            <input type="number" id="calc-emi-amt" class="input-full" value="500000" oninput="Pages.runCalc('emi')">
+          </div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Interest Rate (%)</label>
+              <input type="number" id="calc-emi-rate" class="input-full" value="9.5" step="0.1" oninput="Pages.runCalc('emi')">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tenure (Years)</label>
+              <input type="number" id="calc-emi-years" class="input-full" value="5" oninput="Pages.runCalc('emi')">
+            </div>
+          </div>
+          <div class="calc-result" style="padding:16px; margin:0; background:rgba(0,198,255,0.05); border-radius:8px;">
+            <div class="result-label">Monthly EMI</div>
+            <div class="result-value text-accent" style="font-size:1.5rem; font-weight:700;">₹<span id="calc-emi-res">10,501</span></div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Total Interest: ₹<span id="calc-emi-int">130,058</span></div>
+          </div>
+        </div>
+
+        <!-- FD Calculator -->
+        <div class="card">
+          <div class="form-section-title"><i class="fa fa-chart-line"></i> FD Maturity Calculator</div>
+          <div class="form-group">
+            <label class="form-label">Deposit Amount (₹)</label>
+            <input type="number" id="calc-fd-amt" class="input-full" value="100000" oninput="Pages.runCalc('fd')">
+          </div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Interest Rate (%)</label>
+              <input type="number" id="calc-fd-rate" class="input-full" value="7.1" step="0.1" oninput="Pages.runCalc('fd')">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tenure (Years)</label>
+              <input type="number" id="calc-fd-years" class="input-full" value="3" oninput="Pages.runCalc('fd')">
+            </div>
+          </div>
+          <div class="calc-result" style="padding:16px; margin:0; background:rgba(0,230,118,0.05); border-radius:8px;">
+            <div class="result-label">Maturity Amount</div>
+            <div class="result-value text-green" style="font-size:1.5rem; font-weight:700;">₹<span id="calc-fd-res">123,507</span></div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Interest Earned: ₹<span id="calc-fd-int">23,507</span></div>
+          </div>
+        </div>
+      </div>
     `;
+    Pages.runCalc('emi');
+    Pages.runCalc('fd');
+  },
+
+  runCalc: (type) => {
+    if (type === 'emi') {
+      const p = parseFloat(document.getElementById('calc-emi-amt').value) || 0;
+      const r = parseFloat(document.getElementById('calc-emi-rate').value) || 0;
+      const n = (parseFloat(document.getElementById('calc-emi-years').value) || 0) * 12;
+      if(p>0 && r>0 && n>0) {
+        const monthlyRate = r / 100 / 12;
+        const emi = (p * monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1);
+        const totalPaid = emi * n;
+        document.getElementById('calc-emi-res').textContent = emi.toLocaleString('en-IN', {maximumFractionDigits:0});
+        document.getElementById('calc-emi-int').textContent = (totalPaid - p).toLocaleString('en-IN', {maximumFractionDigits:0});
+      }
+    } else if (type === 'fd') {
+      const p = parseFloat(document.getElementById('calc-fd-amt').value) || 0;
+      const r = parseFloat(document.getElementById('calc-fd-rate').value) || 0;
+      const t = parseFloat(document.getElementById('calc-fd-years').value) || 0;
+      if(p>0 && r>0 && t>0) {
+        // Compound quarterly
+        const maturity = p * Math.pow(1 + (r / 100) / 4, 4 * t);
+        document.getElementById('calc-fd-res').textContent = maturity.toLocaleString('en-IN', {maximumFractionDigits:0});
+        document.getElementById('calc-fd-int').textContent = (maturity - p).toLocaleString('en-IN', {maximumFractionDigits:0});
+      }
+    }
   },
 
   renderSupport: () => {

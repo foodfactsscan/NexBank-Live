@@ -220,14 +220,72 @@ img{max-width:100%}
 .step.done .step-num{background:var(--green);border-color:var(--green);color:#fff}
 .step-label{font-size:.72rem;color:var(--text-muted);margin-top:6px;font-weight:500}
 
-/* ── Debit Card ──────────────────────────────── */
-.debit-card{width:100%;max-width:360px;height:200px;border-radius:20px;padding:24px;position:relative;overflow:hidden;background:linear-gradient(135deg,#0a2463,#1e4dab);border:1px solid rgba(255,255,255,0.1);color:#fff}
+/* ── Debit Card (Flip Animation) ──────────────── */
+.flip-card {
+  background: transparent;
+  width: 100%;
+  max-width: 360px;
+  height: 200px;
+  perspective: 1000px;
+  cursor: pointer;
+}
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: left;
+  transition: transform 0.8s;
+  transform-style: preserve-3d;
+}
+.flip-card:hover .flip-card-inner, .flip-card.flipped .flip-card-inner {
+  transform: rotateY(180deg);
+}
+.flip-card-front, .flip-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: 20px;
+  padding: 24px;
+  background: linear-gradient(135deg,#0a2463,#1e4dab);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #fff;
+  overflow: hidden;
+}
+.flip-card-back {
+  transform: rotateY(180deg);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.card-mag-strip {
+  width: 100%;
+  height: 40px;
+  background: #111;
+  margin-top: 20px;
+}
+.card-cvv-strip {
+  background: #fff;
+  height: 30px;
+  margin: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 12px;
+  color: #000;
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.debit-card{width:100%;height:100%;position:relative;}
 .card-chip{width:40px;height:30px;background:linear-gradient(135deg,#d4af37,#f5e07e);border-radius:6px;margin-bottom:20px}
-.card-number{font-family:monospace;font-size:1rem;letter-spacing:3px;margin-bottom:16px}
+.card-number{font-family:monospace;font-size:1.1rem;letter-spacing:3px;margin-bottom:16px;text-shadow: 0 2px 4px rgba(0,0,0,0.4);}
 .card-bottom{display:flex;justify-content:space-between;align-items:flex-end}
-.card-holder{font-size:.8rem;text-transform:uppercase;letter-spacing:1px;opacity:.8}
+.card-holder{font-size:.85rem;text-transform:uppercase;letter-spacing:1px;opacity:.9;text-shadow: 0 1px 2px rgba(0,0,0,0.3);}
 .card-expiry-label{font-size:.6rem;opacity:.6;margin-bottom:2px}
-.card-expiry{font-size:.85rem;font-weight:600}
+.card-expiry{font-size:.85rem;font-weight:600;text-shadow: 0 1px 2px rgba(0,0,0,0.3);}
 .card-network{font-size:1.8rem;font-weight:900;font-style:italic;opacity:.9}
 
 /* ── Data Table ──────────────────────────────── */
