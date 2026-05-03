@@ -7,14 +7,16 @@ if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
 }
 
+mongoose.set('bufferCommands', false); // Disable buffering globally
+
 async function connectDB() {
   if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 8000, // Faster timeout
-      heartbeatFrequencyMS: 2000,
+      serverSelectionTimeoutMS: 5000, // Very fast timeout
+      connectTimeoutMS: 10000,
     };
     
     if (!MONGODB_URI) {

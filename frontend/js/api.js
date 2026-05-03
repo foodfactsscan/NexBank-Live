@@ -8,12 +8,18 @@ const Api = {
   loadToken(){ this._token = localStorage.getItem('nexbank_token'); return this._token; },
 
   async _req(method, path, body){
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), 15000); // 15s timeout
+    
     const headers = { 'Content-Type': 'application/json' };
     if(this._token) headers['Authorization'] = `Bearer ${this._token}`;
-    const opts = { method, headers };
+    const opts = { method, headers, signal: controller.signal };
     if(body) opts.body = JSON.stringify(body);
-    const res = await fetch(API_BASE + path, opts);
-    const data = await res.json().catch(()=>({}));
+    
+    try {
+      const res = await fetch(API_BASE + path, opts);
+      clearTimeout(id);
+      const data = await res.json().catch(()=>({}));
     if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     return data;
   },
