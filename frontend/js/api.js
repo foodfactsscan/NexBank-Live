@@ -9,7 +9,7 @@ const Api = {
 
   async _req(method, path, body) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 15000);
+    const timer = setTimeout(() => controller.abort(), 30000); // 30s timeout for cold starts
     const headers = { 'Content-Type': 'application/json' };
     if (this._token) headers['Authorization'] = `Bearer ${this._token}`;
     const opts = { method, headers, signal: controller.signal };

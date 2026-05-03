@@ -10,12 +10,11 @@ require('dotenv').config();
 
 // ENV Validation
 const requiredEnv = ['MONGODB_URI', 'JWT_SECRET'];
-requiredEnv.forEach(key => {
-  if (!process.env[key]) {
-    console.error(`❌ FATAL: Missing required environment variable: ${key}`);
-    process.exit(1);
-  }
-});
+const missingEnv = requiredEnv.filter(key => !process.env[key]);
+if (missingEnv.length > 0) {
+  console.warn(`⚠️ Warning: Missing environment variables: ${missingEnv.join(', ')}`);
+}
+
 
 const authRoutes = require('./routes/auth');
 const accountRoutes = require('./routes/accounts');
@@ -88,6 +87,17 @@ const limiter = rateLimit({
   message: { error: 'Too many requests, please try again later.' }
 });
 app.use('/api/', limiter);
+
+// Middleware to check for missing config
+app.use((req, res, next) => {
+  if (missingEnv.length > 0 && req.path.startsWith('/api')) {
+    return res.status(500).json({ 
+      error: 'Server Configuration Error', 
+      message: `Missing required environment variables on Vercel: ${missingEnv.join(', ')}. Please add them in the Vercel Dashboard.` 
+    });
+  }
+  next();
+});
 
 // Serve static frontend files
 app.use(express.static(path.join(__dirname, '../frontend')));
