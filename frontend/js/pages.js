@@ -298,7 +298,7 @@ const Pages = {
 
           <div class="card hidden" id="transfer-step-3">
             <div class="empty-state" style="padding:20px">
-              <lottie-player src="https://assets10.lottiefiles.com/packages/lf20_afwjh8re.json" background="transparent" speed="1" style="width: 120px; height: 120px; margin: 0 auto;" autoplay></lottie-player>
+              <lottie-player src="https://lottie.host/28f6e8f4-6515-4674-8b63-9426f494f41b/f8S7B6v3b3.json" background="transparent" speed="1" style="width: 120px; height: 120px; margin: 0 auto;" loop autoplay></lottie-player>
               <h2 class="mt-16 text-green">Transfer Successful!</h2>
               <p class="mt-8 mb-20 text-muted">Transaction Reference: <strong id="ts-ref">--</strong></p>
               

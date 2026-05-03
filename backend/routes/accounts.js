@@ -52,40 +52,43 @@ router.get('/:id/summary', authMiddleware, async (req, res) => {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const allTxns = await Transactions.findByAccountId(req.params.id, 1000);
 
-  const thisMonthTxns = allTxns.filter(t => new Date(t.createdAt) >= startOfMonth);
-
-  const totalDebits = thisMonthTxns
-    .filter(t => t.fromAccountId === req.params.id)
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const totalCredits = thisMonthTxns
-    .filter(t => t.toAccountId === req.params.id)
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  // Category breakdown
-  const categories = {};
-  thisMonthTxns.filter(t => t.fromAccountId === req.params.id).forEach(t => {
-    const cat = t.category || 'Others';
-    categories[cat] = (categories[cat] || 0) + t.amount;
-  });
-
-  // Last 6 months
+  // Optimized summary calculation
   const monthlyData = [];
+  const categories = {};
+  let totalDebits = 0;
+  let totalCredits = 0;
+
+  // Pre-calculate month ranges to avoid repeated Date object creation
+  const monthRanges = [];
   for (let i = 5; i >= 0; i--) {
-    const mStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const mEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
-    const mTxns = allTxns.filter(t => {
-      const d = new Date(t.createdAt);
-      return d >= mStart && d <= mEnd;
-    });
-    const credit = mTxns.filter(t => t.toAccountId === req.params.id).reduce((s, t) => s + t.amount, 0);
-    const debit = mTxns.filter(t => t.fromAccountId === req.params.id).reduce((s, t) => s + t.amount, 0);
-    monthlyData.push({
-      month: mStart.toLocaleString('default', { month: 'short', year: '2-digit' }),
-      credit: parseFloat(credit.toFixed(2)),
-      debit: parseFloat(debit.toFixed(2))
-    });
+    const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+    monthRanges.push({ start, end, label: start.toLocaleString('default', { month: 'short', year: '2-digit' }), credit: 0, debit: 0 });
   }
+
+  allTxns.forEach(t => {
+    const tDate = new Date(t.createdAt);
+    const isCredit = t.toAccountId === req.params.id;
+    const isDebit = t.fromAccountId === req.params.id;
+
+    // This month totals
+    if (tDate >= startOfMonth) {
+      if (isCredit) totalCredits += t.amount;
+      if (isDebit) {
+        totalDebits += t.amount;
+        const cat = t.category || 'Others';
+        categories[cat] = (categories[cat] || 0) + t.amount;
+      }
+    }
+
+    // Monthly buckets
+    monthRanges.forEach(range => {
+      if (tDate >= range.start && tDate <= range.end) {
+        if (isCredit) range.credit += t.amount;
+        if (isDebit) range.debit += t.amount;
+      }
+    });
+  });
 
   res.json({
     summary: {
@@ -94,7 +97,7 @@ router.get('/:id/summary', authMiddleware, async (req, res) => {
       monthlyExpense: parseFloat(totalDebits.toFixed(2)),
       netSavings: parseFloat((totalCredits - totalDebits).toFixed(2)),
       categoryBreakdown: categories,
-      monthlyData
+      monthlyData: monthRanges.map(r => ({ month: r.label, credit: r.credit, debit: r.debit }))
     }
   });
 });
