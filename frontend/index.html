@@ -2,9 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <meta name="description" content="NexBank — Your trusted digital banking partner. Instant transfers, real-time balance, fixed deposits, loans and more."/>
-  <meta name="theme-color" content="#0a1628"/>
+  <meta name="theme-color" content="#030914"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <title>NexBank — Smart Digital Banking</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -13,6 +15,7 @@
   <link rel="stylesheet" href="/css/style.css"/>
 </head>
 <body>
+
   <!-- Loading Screen -->
   <div id="loading-screen" class="loading-screen">
     <div class="loader-content">
@@ -28,7 +31,7 @@
   <!-- App Root -->
   <div id="app" class="app hidden">
 
-    <!-- ── AUTH PAGES ───────────────────────────────── -->
+    <!-- ── AUTH PAGES ─────────────────────────────────────── -->
     <div id="page-auth" class="page-auth">
       <div class="auth-bg">
         <div class="auth-orb orb1"></div>
@@ -52,7 +55,6 @@
       </div>
       <div class="auth-right">
         <div class="auth-card">
-          <!-- Tabs -->
           <div class="auth-tabs">
             <button class="auth-tab active" id="tab-login" onclick="App.showLogin()">Login</button>
             <button class="auth-tab" id="tab-register" onclick="App.showRegister()">Open Account</button>
@@ -73,7 +75,7 @@
             </div>
             <div class="form-row">
               <label class="checkbox-label"><input type="checkbox" id="remember-me"/> Remember me</label>
-              <a href="#" class="link-sm" onclick="App.showForgotPwd()">Forgot password?</a>
+              <a href="#" class="link-sm">Forgot password?</a>
             </div>
             <button class="btn-primary" id="btn-login" onclick="Auth.login()">
               <span>Login Securely</span><i class="fa fa-arrow-right"></i>
@@ -81,7 +83,7 @@
             <div class="auth-divider"><span>or login with Account Number</span></div>
             <div class="input-group">
               <i class="fa fa-hashtag"></i>
-              <input type="text" id="login-accnum" placeholder="10-digit Account Number" maxlength="10"/>
+              <input type="text" id="login-accnum" placeholder="10-digit Account Number" maxlength="10" inputmode="numeric"/>
             </div>
             <button class="btn-outline" onclick="Auth.loginWithAccount()">Login with Account Number</button>
           </div>
@@ -106,11 +108,11 @@
             </div>
             <div class="input-group">
               <i class="fa fa-phone"></i>
-              <input type="tel" id="reg-phone" placeholder="Mobile Number (10 digits)" maxlength="10"/>
+              <input type="tel" id="reg-phone" placeholder="Mobile Number (10 digits)" maxlength="10" inputmode="numeric"/>
             </div>
             <div class="input-group">
               <i class="fa fa-calendar"></i>
-              <input type="date" id="reg-dob" placeholder="Date of Birth"/>
+              <input type="date" id="reg-dob"/>
             </div>
             <div class="input-group">
               <i class="fa fa-venus-mars"></i>
@@ -140,7 +142,7 @@
             </div>
             <label class="checkbox-label terms">
               <input type="checkbox" id="reg-terms"/>
-              I agree to the <a href="javascript:void(0)" class="link-sm" onclick="App.openModal('terms')">Terms & Conditions</a> and <a href="javascript:void(0)" class="link-sm" onclick="App.openModal('privacy')">Privacy Policy</a>
+              I agree to the <a href="javascript:void(0)" class="link-sm" onclick="App.openModal('terms')">Terms &amp; Conditions</a> and <a href="javascript:void(0)" class="link-sm" onclick="App.openModal('privacy')">Privacy Policy</a>
             </label>
             <button class="btn-primary" id="btn-register" onclick="Auth.register()">
               <span>Create Account</span><i class="fa fa-arrow-right"></i>
@@ -150,10 +152,10 @@
       </div>
     </div>
 
-    <!-- ── MAIN APP (post-login) ─────────────────────── -->
+    <!-- ── MAIN APP (post-login) ──────────────────────────── -->
     <div id="page-main" class="page-main hidden">
 
-      <!-- Sidebar -->
+      <!-- Sidebar (desktop) -->
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
           <div class="sidebar-brand">
@@ -170,51 +172,26 @@
           </div>
         </div>
         <nav class="sidebar-nav">
-          <a href="#" class="nav-item active" data-page="dashboard" onclick="App.navigate('dashboard')">
-            <i class="fa fa-th-large"></i><span>Dashboard</span>
-          </a>
-          <a href="#" class="nav-item" data-page="transfer" onclick="App.navigate('transfer')">
-            <i class="fa fa-paper-plane"></i><span>Send Money</span>
-          </a>
-          <a href="#" class="nav-item" data-page="transactions" onclick="App.navigate('transactions')">
-            <i class="fa fa-list-alt"></i><span>Transactions</span>
-          </a>
-          <a href="#" class="nav-item" data-page="accounts" onclick="App.navigate('accounts')">
-            <i class="fa fa-university"></i><span>Accounts</span>
-          </a>
-          <a href="#" class="nav-item" data-page="cards" onclick="App.navigate('cards')">
-            <i class="fa fa-credit-card"></i><span>Cards</span>
-          </a>
-          <a href="#" class="nav-item" data-page="investments" onclick="App.navigate('investments')">
-            <i class="fa fa-chart-line"></i><span>Investments & FD</span>
-          </a>
-          <a href="#" class="nav-item" data-page="loans" onclick="App.navigate('loans')">
-            <i class="fa fa-hand-holding-usd"></i><span>Loans</span>
-          </a>
-          <a href="#" class="nav-item" data-page="beneficiaries" onclick="App.navigate('beneficiaries')">
-            <i class="fa fa-users"></i><span>Beneficiaries</span>
-          </a>
-          <a href="#" class="nav-item" data-page="calculators" onclick="App.navigate('calculators')">
-            <i class="fa fa-calculator"></i><span>Calculators</span>
-          </a>
-          <a href="#" class="nav-item hidden" id="nav-admin" data-page="admin" onclick="App.navigate('admin')">
-            <i class="fa fa-shield-alt text-gold"></i><span style="color:var(--gold); font-weight:700">Admin Panel</span>
-          </a>
-          <a href="#" class="nav-item" data-page="profile" onclick="App.navigate('profile')">
-            <i class="fa fa-user-circle"></i><span>Profile</span>
-          </a>
-          <a href="#" class="nav-item" data-page="support" onclick="App.navigate('support')">
-            <i class="fa fa-headset"></i><span>Support</span>
-          </a>
+          <a href="#" class="nav-item active" data-page="dashboard" onclick="App.navigate('dashboard');return false;"><i class="fa fa-th-large"></i><span>Dashboard</span></a>
+          <a href="#" class="nav-item" data-page="transfer" onclick="App.navigate('transfer');return false;"><i class="fa fa-paper-plane"></i><span>Send Money</span></a>
+          <a href="#" class="nav-item" data-page="transactions" onclick="App.navigate('transactions');return false;"><i class="fa fa-list-alt"></i><span>Transactions</span></a>
+          <a href="#" class="nav-item" data-page="accounts" onclick="App.navigate('accounts');return false;"><i class="fa fa-university"></i><span>Accounts</span></a>
+          <a href="#" class="nav-item" data-page="bills" onclick="App.navigate('bills');return false;"><i class="fa fa-receipt"></i><span>Bill Payments</span></a>
+          <a href="#" class="nav-item" data-page="cards" onclick="App.navigate('cards');return false;"><i class="fa fa-credit-card"></i><span>Cards</span></a>
+          <a href="#" class="nav-item" data-page="investments" onclick="App.navigate('investments');return false;"><i class="fa fa-chart-line"></i><span>Investments &amp; FD</span></a>
+          <a href="#" class="nav-item" data-page="loans" onclick="App.navigate('loans');return false;"><i class="fa fa-hand-holding-usd"></i><span>Loans</span></a>
+          <a href="#" class="nav-item" data-page="beneficiaries" onclick="App.navigate('beneficiaries');return false;"><i class="fa fa-users"></i><span>Beneficiaries</span></a>
+          <a href="#" class="nav-item" data-page="calculators" onclick="App.navigate('calculators');return false;"><i class="fa fa-calculator"></i><span>Calculators</span></a>
+          <a href="#" class="nav-item hidden" id="nav-admin" data-page="admin" onclick="App.navigate('admin');return false;"><i class="fa fa-shield-alt text-gold"></i><span style="color:var(--gold);font-weight:700">Admin Panel</span></a>
+          <a href="#" class="nav-item" data-page="profile" onclick="App.navigate('profile');return false;"><i class="fa fa-user-circle"></i><span>Profile</span></a>
+          <a href="#" class="nav-item" data-page="support" onclick="App.navigate('support');return false;"><i class="fa fa-headset"></i><span>Support</span></a>
         </nav>
         <div class="sidebar-footer">
-          <button class="nav-item logout-btn" onclick="Auth.logout()">
-            <i class="fa fa-sign-out-alt"></i><span>Logout</span>
-          </button>
+          <button class="nav-item logout-btn" onclick="Auth.logout()"><i class="fa fa-sign-out-alt"></i><span>Logout</span></button>
         </div>
       </aside>
 
-      <!-- Overlay -->
+      <!-- Mobile Overlay -->
       <div class="sidebar-overlay" id="sidebar-overlay" onclick="App.closeSidebar()"></div>
 
       <!-- Main Content -->
@@ -226,7 +203,7 @@
             <div class="page-title" id="page-title">Dashboard</div>
           </div>
           <div class="topbar-right">
-            <div class="ws-badge" id="ws-badge" title="Real-time connected"><i class="fa fa-circle"></i></div>
+            <div class="ws-badge" id="ws-badge" title="Connected"><i class="fa fa-circle"></i></div>
             <button class="icon-btn" onclick="App.navigate('notifications')" id="notif-btn">
               <i class="fa fa-bell"></i>
               <span class="badge hidden" id="notif-badge">0</span>
@@ -237,23 +214,45 @@
 
         <!-- Page Views -->
         <main class="page-content">
-          <div id="view-dashboard" class="view active"></div>
-          <div id="view-transfer" class="view hidden"></div>
+          <div id="view-dashboard"    class="view active"></div>
+          <div id="view-transfer"     class="view hidden"></div>
           <div id="view-transactions" class="view hidden"></div>
-          <div id="view-accounts" class="view hidden"></div>
-          <div id="view-cards" class="view hidden"></div>
-          <div id="view-investments" class="view hidden"></div>
-          <div id="view-loans" class="view hidden"></div>
-          <div id="view-beneficiaries" class="view hidden"></div>
-          <div id="view-calculators" class="view hidden"></div>
-          <div id="view-profile" class="view hidden"></div>
-          <div id="view-support" class="view hidden"></div>
-          <div id="view-notifications" class="view hidden"></div>
-          <div id="view-admin" class="view hidden"></div>
+          <div id="view-accounts"     class="view hidden"></div>
+          <div id="view-bills"        class="view hidden"></div>
+          <div id="view-cards"        class="view hidden"></div>
+          <div id="view-investments"  class="view hidden"></div>
+          <div id="view-loans"        class="view hidden"></div>
+          <div id="view-beneficiaries"class="view hidden"></div>
+          <div id="view-calculators"  class="view hidden"></div>
+          <div id="view-profile"      class="view hidden"></div>
+          <div id="view-support"      class="view hidden"></div>
+          <div id="view-notifications"class="view hidden"></div>
+          <div id="view-admin"        class="view hidden"></div>
         </main>
       </div>
-    </div><!-- /page-main -->
 
+      <!-- Mobile Bottom Navigation -->
+      <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+        <div class="mobile-nav-items">
+          <button class="mob-nav-btn active" id="mob-btn-dashboard" onclick="App.navigate('dashboard')">
+            <i class="fa fa-th-large"></i><span>Home</span>
+          </button>
+          <button class="mob-nav-btn" id="mob-btn-transactions" onclick="App.navigate('transactions')">
+            <i class="fa fa-list-alt"></i><span>History</span>
+          </button>
+          <button class="mob-nav-center" onclick="App.navigate('transfer')">
+            <i class="fa fa-paper-plane"></i>
+          </button>
+          <button class="mob-nav-btn" id="mob-btn-cards" onclick="App.navigate('cards')">
+            <i class="fa fa-credit-card"></i><span>Cards</span>
+          </button>
+          <button class="mob-nav-btn" id="mob-btn-profile" onclick="App.navigate('profile')">
+            <i class="fa fa-user-circle"></i><span>Profile</span>
+          </button>
+        </div>
+      </nav>
+
+    </div><!-- /page-main -->
   </div><!-- /app -->
 
   <!-- Modal -->
