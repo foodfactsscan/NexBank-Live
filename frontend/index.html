@@ -17,10 +17,49 @@
 </head>
 <body>
 
+  <!-- ──────────────────────────────────────────────────────────────────────
+       NexBank logo — rendered once as an SVG <symbol> and reused via <use>
+       wherever the brand mark appears (loader, sidebar, topbar, auth page).
+       This keeps every instance pixel-identical and lets a single edit
+       update the brand everywhere.
+
+       The mark is a stylised "N" drawn as one continuous stroke that turns
+       into an upward arrow on the trailing leg, with a small spark dot at
+       the corner — meaning: motion, growth, instant. The fill is a
+       cool-to-warm gradient (indigo → cyan → emerald) inside a 12-px
+       rounded square.
+  ────────────────────────────────────────────────────────────────────────── -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="nx-mark-grad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+        <stop offset="0"   stop-color="#6366F1"/>
+        <stop offset=".55" stop-color="#06B6D4"/>
+        <stop offset="1"   stop-color="#10B981"/>
+      </linearGradient>
+      <linearGradient id="nx-mark-shine" x1="0" y1="0" x2="0" y2="48" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#ffffff" stop-opacity=".28"/>
+        <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+      </linearGradient>
+      <symbol id="nx-mark" viewBox="0 0 48 48">
+        <rect width="48" height="48" rx="12" fill="url(#nx-mark-grad)"/>
+        <rect width="48" height="22" rx="12" fill="url(#nx-mark-shine)"/>
+        <!-- Stylised N: down-left, diagonal up-right, down-right -->
+        <path d="M14 34 V14 L34 34 V14"
+              stroke="#ffffff" stroke-width="3.6"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <!-- Spark — instant / real-time -->
+        <circle cx="34" cy="14" r="2.6" fill="#ffffff"/>
+      </symbol>
+    </defs>
+  </svg>
+
   <!-- Loading Screen -->
   <div id="loading-screen" class="loading-screen">
     <div class="loader-content">
-      <div class="loader-logo"><span class="logo-icon">N</span><span class="logo-text">exBank</span></div>
+      <div class="loader-logo">
+        <svg class="nx-logo-mark" width="56" height="56" aria-hidden="true"><use href="#nx-mark"/></svg>
+        <span class="nx-logo-word">NexBank</span>
+      </div>
       <div class="loader-bar"><div class="loader-fill"></div></div>
       <p class="loader-msg">Securing your session…</p>
     </div>
@@ -32,33 +71,56 @@
   <!-- App Root -->
   <div id="app" class="app hidden">
 
-    <!-- ── AUTH PAGES ─────────────────────────────────────── -->
-    <div id="page-auth" class="page-auth">
-      <div class="auth-bg">
-        <div class="auth-orb orb1"></div>
-        <div class="auth-orb orb2"></div>
-        <div class="auth-orb orb3"></div>
+    <!-- ── AUTH PAGES ─────────────────────────────────────────────────
+         Redesigned: minimalist split-screen. Left side is a quiet brand
+         narrative with one tagline and three trust signals as small chips.
+         Right side is a single centered card with a clean segmented control
+         (login / open account). On mobile the left side collapses out and
+         the form takes the whole screen. The classnames are all new
+         (`nx-auth-*`) so the redesign doesn't fight the legacy CSS still
+         present elsewhere on the page.
+    ─────────────────────────────────────────────────────────────────────── -->
+    <div id="page-auth" class="page-auth nx-auth">
+      <div class="nx-auth-bg" aria-hidden="true">
+        <span class="nx-mesh-blob nx-blob-a"></span>
+        <span class="nx-mesh-blob nx-blob-b"></span>
+        <span class="nx-mesh-blob nx-blob-c"></span>
+        <span class="nx-grid"></span>
       </div>
-      <div class="auth-left">
-        <div class="auth-brand">
-          <div class="brand-icon">N</div>
-          <span>NexBank</span>
+
+      <aside class="nx-auth-pitch">
+        <a href="#" class="nx-brand">
+          <svg class="nx-logo-mark" width="40" height="40" aria-hidden="true"><use href="#nx-mark"/></svg>
+          <span class="nx-logo-word">NexBank</span>
+        </a>
+
+        <div class="nx-auth-hero">
+          <h1 class="nx-headline">Banking that just<br/><em>moves with you.</em></h1>
+          <p class="nx-subline">Instant transfers, smart insights, virtual cards,
+            and zero-fuss savings goals. Built for India, ready for the world.</p>
+
+          <ul class="nx-trust">
+            <li><i class="fa fa-bolt"></i> Real-time IMPS &middot; UPI &middot; NEFT</li>
+            <li><i class="fa fa-shield-halved"></i> 256-bit encryption &middot; 2FA-ready</li>
+            <li><i class="fa fa-chart-line"></i> Spending insights &middot; budgets</li>
+          </ul>
         </div>
-        <div class="auth-hero">
-          <h1>Banking That Works At The Speed Of Life</h1>
-          <p>Instant transfers · Real-time balance · Smart analytics · 24/7 support</p>
-          <div class="auth-stats">
-            <div class="stat"><span class="stat-val">10M+</span><span class="stat-label">Customers</span></div>
-            <div class="stat"><span class="stat-val">₹2T+</span><span class="stat-label">Transferred</span></div>
-            <div class="stat"><span class="stat-val">99.9%</span><span class="stat-label">Uptime</span></div>
-          </div>
-        </div>
-      </div>
-      <div class="auth-right">
-        <div class="auth-card">
-          <div class="auth-tabs">
-            <button class="auth-tab active" id="tab-login" onclick="App.showLogin()">Login</button>
-            <button class="auth-tab" id="tab-register" onclick="App.showRegister()">Open Account</button>
+
+        <p class="nx-fineprint">
+          Trusted by 10M+ customers &middot; ₹2T+ transferred &middot; 99.99% uptime
+        </p>
+      </aside>
+
+      <section class="nx-auth-panel">
+        <div class="nx-auth-card">
+          <a href="#" class="nx-brand nx-brand-mobile">
+            <svg class="nx-logo-mark" width="36" height="36" aria-hidden="true"><use href="#nx-mark"/></svg>
+            <span class="nx-logo-word">NexBank</span>
+          </a>
+
+          <div class="nx-tabs" role="tablist">
+            <button class="nx-tab active" id="tab-login" role="tab" onclick="App.showLogin()">Sign in</button>
+            <button class="nx-tab" id="tab-register" role="tab" onclick="App.showRegister()">Create account</button>
           </div>
 
           <!-- Login Form -->
@@ -150,7 +212,7 @@
             </button>
           </div>
         </div>
-      </div>
+      </section>
     </div>
 
     <!-- ── MAIN APP (post-login) ──────────────────────────── -->
@@ -160,7 +222,7 @@
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
           <div class="sidebar-brand">
-            <div class="brand-icon sm">N</div>
+            <svg class="nx-logo-mark" width="32" height="32" aria-hidden="true"><use href="#nx-mark"/></svg>
             <span>NexBank</span>
           </div>
           <button class="sidebar-close" onclick="App.closeSidebar()"><i class="fa fa-times"></i></button>
@@ -200,6 +262,10 @@
         <header class="topbar">
           <div class="topbar-left">
             <button class="hamburger" onclick="App.openSidebar()"><i class="fa fa-bars"></i></button>
+            <a href="#" class="topbar-brand" onclick="App.navigate('dashboard');return false;" aria-label="NexBank home">
+              <svg class="nx-logo-mark" width="30" height="30" aria-hidden="true"><use href="#nx-mark"/></svg>
+              <span class="topbar-brand-word">NexBank</span>
+            </a>
             <div class="page-title" id="page-title">Dashboard</div>
           </div>
           <div class="topbar-right">
