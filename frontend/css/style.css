@@ -854,8 +854,28 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin:8p
 }
 .nx-auth-card .link-sm:hover { color: var(--nx-accent); }
 
-.nx-auth-card .eye-btn { color: var(--nx-text-3); }
-.nx-auth-card .eye-btn:hover { color: var(--nx-text); }
+/* Eye toggle: anchor inside the input box, vertically centred,
+   with a small hit-target so the icon stops drifting outside. */
+.nx-auth-card .input-group { position: relative; }
+.nx-auth-card .input-group input[type="password"] { padding-right: 44px; }
+.nx-auth-card .eye-btn {
+  position: absolute;
+  top: 50%; right: 8px;
+  transform: translateY(-50%);
+  width: 32px; height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0;
+  background: transparent; border: 0; border-radius: 8px;
+  color: var(--nx-text-3); font-size: 0.85rem;
+  cursor: pointer;
+  transition: color 160ms, background 160ms;
+}
+.nx-auth-card .eye-btn:hover { color: var(--nx-text); background: rgba(255, 255, 255, 0.05); }
+.nx-auth-card .eye-btn:focus-visible {
+  outline: 2px solid var(--nx-accent);
+  outline-offset: 2px;
+}
+.nx-auth-card .eye-btn i { line-height: 1; pointer-events: none; }
 
 /* ── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 980px) {
