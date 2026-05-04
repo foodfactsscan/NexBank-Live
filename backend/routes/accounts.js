@@ -48,75 +48,70 @@ router.get('/:id/summary', authMiddleware, async (req, res) => {
     return res.status(404).json({ error: 'Account not found' });
   }
 
-  // 100% Accurate & Performant Aggregation Pipeline
+  // Ultra-Performant Single-Query Aggregation
   try {
-    const pipeline = [
-      { $match: { 
-          $or: [
-            { fromAccountId: req.params.id }, 
-            { toAccountId: req.params.id }
-          ],
-          createdAt: { $gte: startOfMonth }
-      }},
-      { $group: {
-          _id: null,
-          totalCredits: { $sum: { $cond: [{ $eq: ["$toAccountId", req.params.id] }, "$amount", 0] } },
-          totalDebits: { $sum: { $cond: [{ $eq: ["$fromAccountId", req.params.id] }, "$amount", 0] } },
-          categories: { $push: { $cond: [{ $eq: ["$fromAccountId", req.params.id] }, { cat: "$category", amt: "$amount" }, "$$REMOVE"] } }
-      }}
-    ];
-
-    const [aggResult] = await Transaction.aggregate(pipeline);
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
     
-    // Process categories
-    const categoryBreakdown = {};
-    if (aggResult && aggResult.categories) {
-      aggResult.categories.forEach(c => {
-        if (c && c.cat) {
-          categoryBreakdown[c.cat] = (categoryBreakdown[c.cat] || 0) + c.amt;
-        }
-      });
-    }
+    const summaryAgg = await Transaction.aggregate([
+      { $match: { 
+          $or: [{ fromAccountId: req.params.id }, { toAccountId: req.params.id }],
+          createdAt: { $gte: sixMonthsAgo }
+      }},
+      { $facet: {
+          "thisMonth": [
+            { $match: { createdAt: { $gte: startOfMonth } } },
+            { $group: {
+                _id: null,
+                income: { $sum: { $cond: [{ $eq: ["$toAccountId", req.params.id] }, "$amount", 0] } },
+                expense: { $sum: { $cond: [{ $eq: ["$fromAccountId", req.params.id] }, "$amount", 0] } },
+                categories: { $push: { $cond: [{ $eq: ["$fromAccountId", req.params.id] }, { cat: "$category", amt: "$amount" }, "$$REMOVE"] } }
+            }}
+          ],
+          "trends": [
+            { $group: {
+                _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+                credit: { $sum: { $cond: [{ $eq: ["$toAccountId", req.params.id] }, "$amount", 0] } },
+                debit: { $sum: { $cond: [{ $eq: ["$fromAccountId", req.params.id] }, "$amount", 0] } }
+            }},
+            { $sort: { "_id": 1 } }
+          ]
+      }}
+    ]);
 
-    // Recent 6 months trend
+    const result = summaryAgg[0];
+    const monthData = result.thisMonth[0] || { income: 0, expense: 0, categories: [] };
+    
+    const categoryBreakdown = {};
+    monthData.categories.forEach(c => {
+      if (c && c.cat) categoryBreakdown[c.cat] = (categoryBreakdown[c.cat] || 0) + c.amt;
+    });
+
+    // Format monthly trend data
     const monthlyData = [];
     for (let i = 5; i >= 0; i--) {
-      const mStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const mEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
-      
-      const monthAgg = await Transaction.aggregate([
-        { $match: { 
-            $or: [{ fromAccountId: req.params.id }, { toAccountId: req.params.id }],
-            createdAt: { $gte: mStart, $lte: mEnd }
-        }},
-        { $group: {
-            _id: null,
-            credit: { $sum: { $cond: [{ $eq: ["$toAccountId", req.params.id] }, "$amount", 0] } },
-            debit: { $sum: { $cond: [{ $eq: ["$fromAccountId", req.params.id] }, "$amount", 0] } }
-        }}
-      ]);
-
-      const res = monthAgg[0] || { credit: 0, debit: 0 };
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = d.toISOString().slice(0, 7);
+      const trend = result.trends.find(t => t._id === key) || { credit: 0, debit: 0 };
       monthlyData.push({
-        month: mStart.toLocaleString('default', { month: 'short', year: '2-digit' }),
-        credit: parseFloat(res.credit.toFixed(2)),
-        debit: parseFloat(res.debit.toFixed(2))
+        month: d.toLocaleString('default', { month: 'short', year: '2-digit' }),
+        credit: parseFloat(trend.credit.toFixed(2)),
+        debit: parseFloat(trend.debit.toFixed(2))
       });
     }
 
     res.json({
       summary: {
         currentBalance: account.balance,
-        monthlyIncome: parseFloat((aggResult?.totalCredits || 0).toFixed(2)),
-        monthlyExpense: parseFloat((aggResult?.totalDebits || 0).toFixed(2)),
-        netSavings: parseFloat(((aggResult?.totalCredits || 0) - (aggResult?.totalDebits || 0)).toFixed(2)),
+        monthlyIncome: parseFloat(monthData.income.toFixed(2)),
+        monthlyExpense: parseFloat(monthData.expense.toFixed(2)),
+        netSavings: parseFloat((monthData.income - monthData.expense).toFixed(2)),
         categoryBreakdown,
         monthlyData
       }
     });
   } catch (err) {
-    console.error('Summary Aggregation Error:', err);
-    res.status(500).json({ error: 'Failed to calculate summary' });
+    console.error('Ultra Summary Error:', err);
+    res.status(500).json({ error: 'System busy. Please try again.' });
   }
 });
 

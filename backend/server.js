@@ -107,6 +107,7 @@ app.get('/api/health', async (req, res) => {
     status: dbState === 1 ? 'OK' : 'Error',
     database: states[dbState],
     error: getLastError(),
+    region: process.env.VERCEL_REGION || 'local',
     env: missingEnv.length === 0 ? 'Loaded' : 'Missing Variables',
     timestamp: new Date()
   });
