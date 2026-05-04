@@ -2,35 +2,177 @@ const Pages = {
   // ── Dashboard ─────────────────────────────────────────────────────────────
   renderDashboard: async () => {
     const main = document.getElementById('view-dashboard');
-    main.innerHTML = `<div class="empty-state"><i class="fa fa-spinner spin"></i><p>Loading dashboard...</p></div>`;
+    main.innerHTML = `<div class="empty-state"><i class="fa fa-spinner spin"></i><p>Loading your secure dashboard...</p></div>`;
     try {
       const res = await Api.me();
       const accounts = res.accounts;
       const acc = accounts[0];
       
-      let summary = { monthlyIncome: 0, monthlyExpense: 0, categoryBreakdown: {}, monthlyData: [] };
-      let summaryRes;
-      try {
-        summaryRes = await Api.getSummary(acc.id);
-      } catch(e) { 
-        console.warn('Summary load failed, retrying...', e); 
-        try {
-          summaryRes = await Api.getSummary(acc.id);
-        } catch(e2) {
-          console.error('Final summary load failure', e2);
+      // 1. Render the main structure instantly
+      Pages._renderDashboardShell(main, accounts, acc);
+
+      // 2. Animate the balance
+      App.animateValue(document.getElementById('dash-bal'), 0, acc.balance, 1000);
+
+      // 3. Load data in background
+      Pages._loadDashboardDataAsync(acc, accounts);
+
+    } catch (err) {
+      main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error: ${err.message}</p></div>`;
+    }
+  },
+
+  _renderDashboardShell: (container, accounts, acc) => {
+    container.innerHTML = `
+      <div class="section-title"><i class="fa fa-th-large"></i> Dashboard Overview</div>
+      
+      <div class="grid-3 mb-20">
+        <div class="balance-card">
+          <div class="balance-label">Available Balance</div>
+          <div class="balance-amount"><span class="balance-currency">₹</span><span id="dash-bal">0.00</span></div>
+          <div class="balance-acc">A/C: ${acc.accountNumber} • ${acc.accountType.toUpperCase()}</div>
+          <div style="height: 60px; margin-top: 10px; margin-bottom: -10px;">
+            <canvas id="miniChart"></canvas>
+          </div>
+          <div class="balance-actions mt-16">
+            <button class="bal-btn" onclick="App.navigate('transfer')"><i class="fa fa-paper-plane"></i> Send</button>
+            <button class="bal-btn" onclick="App.navigate('transactions')"><i class="fa fa-list"></i> Statement</button>
+          </div>
+        </div>
+        
+        <div class="card" style="padding: 24px;">
+          <div class="form-section-title mb-16"><i class="fa fa-chart-pie"></i> Spending Insights</div>
+          <div style="height: 180px; display: flex; justify-content: center; align-items: center;" id="donut-container">
+            <i class="fa fa-spinner spin text-muted"></i>
+          </div>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div class="stat-widget" style="flex: 1">
+            <div class="stat-icon green"><i class="fa fa-arrow-down"></i></div>
+            <div class="stat-info">
+              <div class="stat-lbl">Income This Month</div>
+              <div class="stat-val" id="dash-income">₹0.00</div>
+            </div>
+          </div>
+          
+          <div class="stat-widget" style="flex: 1">
+            <div class="stat-icon red"><i class="fa fa-arrow-up"></i></div>
+            <div class="stat-info">
+              <div class="stat-lbl">Spends This Month</div>
+              <div class="stat-val" id="dash-expense">₹0.00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="form-section-title"><i class="fa fa-bolt"></i> Quick Actions</div>
+          <div class="quick-actions">
+            <div class="quick-btn" onclick="App.navigate('transfer')">
+              <i class="fa fa-paper-plane"></i><span>Send</span>
+            </div>
+            <div class="quick-btn" onclick="App.navigate('bills')">
+              <i class="fa fa-file-invoice-dollar"></i><span>Pay Bills</span>
+            </div>
+            <div class="quick-btn" onclick="App.navigate('investments')">
+              <i class="fa fa-chart-line"></i><span>Invest</span>
+            </div>
+            <div class="quick-btn" onclick="App.navigate('loans')">
+              <i class="fa fa-hand-holding-usd"></i><span>Loans</span>
+            </div>
+          </div>
+          
+          <div class="form-section-title mt-24 mb-16"><i class="fa fa-link"></i> Linked Accounts</div>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            ${accounts.map(a => `
+              <div style="padding:12px 16px; border:1px solid var(--border); border-radius:12px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div style="font-weight:600; font-size:0.9rem;">${a.accountType.toUpperCase()} A/C</div>
+                  <div style="font-size:0.8rem; color:var(--text-muted)">${a.accountNumber}</div>
+                </div>
+                <div style="font-family:var(--font2); font-weight:700; color:var(--accent);">₹${a.balance.toLocaleString('en-IN')}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="flex justify-between items-center mb-16">
+            <div class="form-section-title mb-0"><i class="fa fa-history"></i> Recent Transactions</div>
+            <a href="#" onclick="App.navigate('transactions')" class="link-sm">View All</a>
+          </div>
+          <div class="txn-list" id="dash-recent-txns">
+            <div class="empty-state" style="padding:20px"><i class="fa fa-spinner spin"></i></div>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  _loadDashboardDataAsync: async (acc, accounts) => {
+    // 1. Load Transactions
+    try {
+      const txnsRes = await Api.getTransactions(5);
+      const txns = txnsRes.transactions || [];
+      const list = document.getElementById('dash-recent-txns');
+      if (list) {
+        list.innerHTML = txns.length === 0 
+          ? `<div class="empty-state" style="padding:20px"><p>No recent transactions</p></div>`
+          : txns.map(t => {
+              const isCredit = t.toAccountId === acc.id;
+              const color = isCredit ? 'text-green' : 'text-red';
+              const sign = isCredit ? '+' : '-';
+              return `
+                <div class="txn-item">
+                  <div class="txn-icon ${isCredit?'credit':'debit'}"><i class="fa fa-arrow-${isCredit?'down':'up'}"></i></div>
+                  <div class="txn-info">
+                    <div class="txn-name">${t.description || t.category}</div>
+                    <div class="txn-date">${new Date(t.createdAt).toLocaleDateString()}</div>
+                  </div>
+                  <div class="txn-amount">
+                    <div class="amount ${color}">${sign}₹${t.amount.toLocaleString('en-IN')}</div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+      }
+    } catch(err) { console.warn('Dash Txns failed', err); }
+
+    // 2. Load Summary
+    try {
+      const summaryRes = await Api.getSummary(acc.id);
+      const s = summaryRes.summary;
+      
+      document.getElementById('dash-income').innerText = `₹${s.monthlyIncome.toLocaleString('en-IN')}`;
+      document.getElementById('dash-expense').innerText = `₹${s.monthlyExpense.toLocaleString('en-IN')}`;
+
+      if (typeof Chart !== 'undefined') {
+        const donutContainer = document.getElementById('donut-container');
+        if (Object.keys(s.categoryBreakdown).length > 0) {
+          donutContainer.innerHTML = '<canvas id="donutChart"></canvas>';
+          new Chart(document.getElementById('donutChart'), {
+            type: 'doughnut',
+            data: {
+              labels: Object.keys(s.categoryBreakdown),
+              datasets: [{
+                data: Object.values(s.categoryBreakdown),
+                backgroundColor: ['#00d4ff', '#0055ff', '#00fa9a', '#ff4d4d', '#ffdf00', '#7c3aed'],
+                borderWidth: 0
+              }]
+            },
+            options: { plugins: { legend: { display: false } }, cutout: '75%', maintainAspectRatio: false }
+          });
+        } else {
+          donutContainer.innerHTML = '<div class="text-muted text-sm">No spending data</div>';
         }
       }
-      if (summaryRes) summary = summaryRes.summary;
-
-      let txns = [];
-      try {
-        const txnsRes = await Api.getTransactions(5);
-        txns = txnsRes.transactions || [];
-      } catch(e) { console.error('Transactions load failed', e); }
-
-      let txnsHtml = txns.length === 0 
-        ? `<div class="empty-state" style="padding:20px"><p>No recent transactions</p></div>` 
-        : txns.map(t => {
+    } catch(err) { 
+      console.warn('Dash Summary failed', err);
+      document.getElementById('donut-container').innerHTML = '<div class="text-muted text-sm">Summary currently unavailable</div>';
+    }
+  },
             const isCredit = t.toAccountId === acc.id;
             const icon = isCredit ? 'arrow-down credit' : 'arrow-up debit';
             const sign = isCredit ? '+' : '-';
