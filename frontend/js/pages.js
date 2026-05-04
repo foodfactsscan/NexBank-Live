@@ -7,7 +7,7 @@ const Pages = {
       const res = await Api.me();
       const accounts = res.accounts;
       const acc = accounts[0];
-      
+
       // 1. Render the main structure instantly
       Pages._renderDashboardShell(main, accounts, acc);
 
@@ -118,15 +118,15 @@ const Pages = {
       const txns = txnsRes.transactions || [];
       const list = document.getElementById('dash-recent-txns');
       if (list) {
-        list.innerHTML = txns.length === 0 
+        list.innerHTML = txns.length === 0
           ? `<div class="empty-state" style="padding:20px"><p>No recent transactions</p></div>`
           : txns.map(t => {
-              const isCredit = t.toAccountId === acc.id;
-              const color = isCredit ? 'text-green' : 'text-red';
-              const sign = isCredit ? '+' : '-';
-              return `
+            const isCredit = t.toAccountId === acc.id;
+            const color = isCredit ? 'text-green' : 'text-red';
+            const sign = isCredit ? '+' : '-';
+            return `
                 <div class="txn-item">
-                  <div class="txn-icon ${isCredit?'credit':'debit'}"><i class="fa fa-arrow-${isCredit?'down':'up'}"></i></div>
+                  <div class="txn-icon ${isCredit ? 'credit' : 'debit'}"><i class="fa fa-arrow-${isCredit ? 'down' : 'up'}"></i></div>
                   <div class="txn-info">
                     <div class="txn-name">${t.description || t.category}</div>
                     <div class="txn-date">${new Date(t.createdAt).toLocaleDateString()}</div>
@@ -136,15 +136,15 @@ const Pages = {
                   </div>
                 </div>
               `;
-            }).join('');
+          }).join('');
       }
-    } catch(err) { console.warn('Dash Txns failed', err); }
+    } catch (err) { console.warn('Dash Txns failed', err); }
 
     // 2. Load Summary
     try {
       const summaryRes = await Api.getSummary(acc.id);
       const s = summaryRes.summary;
-      
+
       document.getElementById('dash-income').innerText = `₹${s.monthlyIncome.toLocaleString('en-IN')}`;
       document.getElementById('dash-expense').innerText = `₹${s.monthlyExpense.toLocaleString('en-IN')}`;
 
@@ -168,11 +168,10 @@ const Pages = {
           donutContainer.innerHTML = '<div class="text-muted text-sm">No spending data</div>';
         }
       }
-    } catch(err) { 
+    } catch (err) {
       console.warn('Dash Summary failed', err);
       document.getElementById('donut-container').innerHTML = '<div class="text-muted text-sm">Summary currently unavailable</div>';
     }
-  },
   },
 
   // ── Transfer ──────────────────────────────────────────────────────────────
@@ -301,138 +300,138 @@ const Pages = {
           </div>
         </div>
       `;
-    } catch(err) {
+    } catch (err) {
       main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error: ${err.message}</p></div>`;
     }
   },
 
-  setTfMode: (mode, btn) => {
-    document.querySelectorAll('#view-transfer .pill-tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    if(mode === 'new'){
-      document.getElementById('tf-new-sec').classList.remove('hidden');
-      document.getElementById('tf-saved-sec').classList.add('hidden');
-      document.getElementById('tf-save-ben-grp').classList.remove('hidden');
-    } else {
-      document.getElementById('tf-new-sec').classList.add('hidden');
-      document.getElementById('tf-saved-sec').classList.remove('hidden');
-      document.getElementById('tf-save-ben-grp').classList.add('hidden');
-    }
-  },
+    setTfMode: (mode, btn) => {
+      document.querySelectorAll('#view-transfer .pill-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (mode === 'new') {
+        document.getElementById('tf-new-sec').classList.remove('hidden');
+        document.getElementById('tf-saved-sec').classList.add('hidden');
+        document.getElementById('tf-save-ben-grp').classList.remove('hidden');
+      } else {
+        document.getElementById('tf-new-sec').classList.add('hidden');
+        document.getElementById('tf-saved-sec').classList.remove('hidden');
+        document.getElementById('tf-save-ben-grp').classList.add('hidden');
+      }
+    },
 
-  verifyTransfer: async () => {
-    const isNew = !document.getElementById('tf-new-sec').classList.contains('hidden');
-    const toAcc = isNew ? document.getElementById('tf-to-acc').value : document.getElementById('tf-ben').value;
-    const amt = parseFloat(document.getElementById('tf-amount').value);
-    
-    if(!toAcc || toAcc.length !== 10) return App.toast('Enter valid 10-digit account number', 'error');
-    if(!amt || amt <= 0) return App.toast('Enter valid amount', 'error');
+      verifyTransfer: async () => {
+        const isNew = !document.getElementById('tf-new-sec').classList.contains('hidden');
+        const toAcc = isNew ? document.getElementById('tf-to-acc').value : document.getElementById('tf-ben').value;
+        const amt = parseFloat(document.getElementById('tf-amount').value);
 
-    const btn = document.querySelector('#transfer-step-1 .btn-primary');
-    btn.innerHTML = `<i class="fa fa-spinner spin"></i> Verifying...`;
-    btn.disabled = true;
+        if (!toAcc || toAcc.length !== 10) return App.toast('Enter valid 10-digit account number', 'error');
+        if (!amt || amt <= 0) return App.toast('Enter valid amount', 'error');
 
-    try {
-      const verify = await Api.verifyAccount(toAcc);
-      if(!verify.verified) throw new Error('Account verification failed');
+        const btn = document.querySelector('#transfer-step-1 .btn-primary');
+        btn.innerHTML = `<i class="fa fa-spinner spin"></i> Verifying...`;
+        btn.disabled = true;
 
-      // Populate verify screen
-      document.getElementById('tv-amt').textContent = amt.toLocaleString('en-IN', {minimumFractionDigits:2});
-      document.getElementById('tv-acc').textContent = toAcc;
-      document.getElementById('tv-name').textContent = verify.accountHolderName;
-      document.getElementById('tv-mode').textContent = document.getElementById('tf-mode').value;
-      document.getElementById('tv-desc').textContent = document.getElementById('tf-desc').value || '-';
+        try {
+          const verify = await Api.verifyAccount(toAcc);
+          if (!verify.verified) throw new Error('Account verification failed');
 
-      // Store data for submission
-      Pages._tfData = {
-        fromAccountId: document.getElementById('tf-from').value,
-        toAccountNumber: toAcc,
-        amount: amt,
-        mode: document.getElementById('tf-mode').value,
-        description: document.getElementById('tf-desc').value,
-        saveBeneficiary: document.getElementById('tf-save-ben')?.checked || false,
-        beneficiaryName: verify.accountHolderName
-      };
+          // Populate verify screen
+          document.getElementById('tv-amt').textContent = amt.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+          document.getElementById('tv-acc').textContent = toAcc;
+          document.getElementById('tv-name').textContent = verify.accountHolderName;
+          document.getElementById('tv-mode').textContent = document.getElementById('tf-mode').value;
+          document.getElementById('tv-desc').textContent = document.getElementById('tf-desc').value || '-';
 
-      document.getElementById('transfer-step-1').classList.add('hidden');
-      document.getElementById('transfer-step-2').classList.remove('hidden');
-      document.getElementById('ts-1').classList.add('done');
-      document.getElementById('ts-2').classList.add('active');
+          // Store data for submission
+          Pages._tfData = {
+            fromAccountId: document.getElementById('tf-from').value,
+            toAccountNumber: toAcc,
+            amount: amt,
+            mode: document.getElementById('tf-mode').value,
+            description: document.getElementById('tf-desc').value,
+            saveBeneficiary: document.getElementById('tf-save-ben')?.checked || false,
+            beneficiaryName: verify.accountHolderName
+          };
 
-    } catch(err) {
-      App.toast(err.message, 'error');
-    } finally {
-      btn.innerHTML = `Proceed to Verify`;
-      btn.disabled = false;
-    }
-  },
+          document.getElementById('transfer-step-1').classList.add('hidden');
+          document.getElementById('transfer-step-2').classList.remove('hidden');
+          document.getElementById('ts-1').classList.add('done');
+          document.getElementById('ts-2').classList.add('active');
 
-  editTransfer: () => {
-    document.getElementById('transfer-step-2').classList.add('hidden');
-    document.getElementById('transfer-step-1').classList.remove('hidden');
-    document.getElementById('ts-2').classList.remove('active');
-    document.getElementById('ts-1').classList.remove('done');
-  },
+        } catch (err) {
+          App.toast(err.message, 'error');
+        } finally {
+          btn.innerHTML = `Proceed to Verify`;
+          btn.disabled = false;
+        }
+      },
 
-  confirmTransfer: async () => {
-    const btn = document.querySelector('#transfer-step-2 .btn-primary');
-    btn.innerHTML = `<i class="fa fa-spinner spin"></i> Processing...`;
-    btn.disabled = true;
+        editTransfer: () => {
+          document.getElementById('transfer-step-2').classList.add('hidden');
+          document.getElementById('transfer-step-1').classList.remove('hidden');
+          document.getElementById('ts-2').classList.remove('active');
+          document.getElementById('ts-1').classList.remove('done');
+        },
 
-    try {
-      const res = await Api.transfer(Pages._tfData);
-      
-      document.getElementById('ts-ref').textContent = res.transactionId;
-      document.getElementById('ts-amt').textContent = Pages._tfData.amount.toLocaleString('en-IN', {minimumFractionDigits:2});
-      document.getElementById('ts-to').textContent = Pages._tfData.toAccountNumber;
+          confirmTransfer: async () => {
+            const btn = document.querySelector('#transfer-step-2 .btn-primary');
+            btn.innerHTML = `<i class="fa fa-spinner spin"></i> Processing...`;
+            btn.disabled = true;
 
-      document.getElementById('transfer-step-2').classList.add('hidden');
-      document.getElementById('transfer-step-3').classList.remove('hidden');
-      document.getElementById('ts-2').classList.add('done');
-      document.getElementById('ts-3').classList.add('active').classList.add('done');
+            try {
+              const res = await Api.transfer(Pages._tfData);
 
-    } catch(err) {
-      App.toast(err.message, 'error');
-      btn.innerHTML = `Confirm & Send`;
-      btn.disabled = false;
-    }
-  },
+              document.getElementById('ts-ref').textContent = res.transactionId;
+              document.getElementById('ts-amt').textContent = Pages._tfData.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+              document.getElementById('ts-to').textContent = Pages._tfData.toAccountNumber;
 
-  downloadReceipt: () => {
-    App.toast('Generating PDF receipt...', 'info');
-    setTimeout(() => {
-      App.toast('Transaction_Receipt.pdf downloaded successfully.', 'success');
-    }, 1500);
-  },
+              document.getElementById('transfer-step-2').classList.add('hidden');
+              document.getElementById('transfer-step-3').classList.remove('hidden');
+              document.getElementById('ts-2').classList.add('done');
+              document.getElementById('ts-3').classList.add('active').classList.add('done');
 
-  // ── Transactions ──────────────────────────────────────────────────────────
-  renderTransactions: async () => {
-    const main = document.getElementById('view-transactions');
-    main.innerHTML = `<div class="empty-state"><i class="fa fa-spinner spin"></i><p>Loading transactions...</p></div>`;
-    try {
-      const me = await Api.me();
-      const accId = me.accounts[0].id;
-      const res = await Api.getTransactions(100);
-      const txns = res.transactions || [];
+            } catch (err) {
+              App.toast(err.message, 'error');
+              btn.innerHTML = `Confirm & Send`;
+              btn.disabled = false;
+            }
+          },
 
-      let txnsHtml = txns.length === 0 
-        ? `<tr><td colspan="5" class="text-center">No transactions found</td></tr>` 
-        : txns.map(t => {
-            const isCredit = t.toAccountId === accId;
-            const sign = isCredit ? '+' : '-';
-            const color = isCredit ? 'text-green' : 'text-red';
-            return `
+            downloadReceipt: () => {
+              App.toast('Generating PDF receipt...', 'info');
+              setTimeout(() => {
+                App.toast('Transaction_Receipt.pdf downloaded successfully.', 'success');
+              }, 1500);
+            },
+
+              // ── Transactions ──────────────────────────────────────────────────────────
+              renderTransactions: async () => {
+                const main = document.getElementById('view-transactions');
+                main.innerHTML = `<div class="empty-state"><i class="fa fa-spinner spin"></i><p>Loading transactions...</p></div>`;
+                try {
+                  const me = await Api.me();
+                  const accId = me.accounts[0].id;
+                  const res = await Api.getTransactions(100);
+                  const txns = res.transactions || [];
+
+                  let txnsHtml = txns.length === 0
+                    ? `<tr><td colspan="5" class="text-center">No transactions found</td></tr>`
+                    : txns.map(t => {
+                      const isCredit = t.toAccountId === accId;
+                      const sign = isCredit ? '+' : '-';
+                      const color = isCredit ? 'text-green' : 'text-red';
+                      return `
               <tr>
-                <td>${new Date(t.createdAt).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'})}</td>
+                <td>${new Date(t.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                 <td>${t.transactionId}</td>
                 <td class="font-bold">${t.description || t.category}</td>
                 <td><span class="status-badge active">${t.mode}</span></td>
-                <td class="font-bold ${color} text-right">${sign}₹${t.amount.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
+                <td class="font-bold ${color} text-right">${sign}₹${t.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
               </tr>
             `;
-          }).join('');
+                    }).join('');
 
-      main.innerHTML = `
+                  main.innerHTML = `
         <div class="flex justify-between items-center mb-16">
           <div class="section-title mb-0"><i class="fa fa-list-alt"></i> Transaction History</div>
           <button class="btn-outline" style="width:auto; padding:8px 16px; margin:0" onclick="Pages.downloadStatement()"><i class="fa fa-download"></i> Export PDF</button>
@@ -442,7 +441,7 @@ const Pages = {
           <div class="grid-3" style="align-items:end;">
             <div class="form-group mb-0">
               <label class="form-label" style="font-size:0.8rem">From Date</label>
-              <input type="date" class="input-full" id="txn-from" value="${new Date(new Date().setMonth(new Date().getMonth()-1)).toISOString().split('T')[0]}">
+              <input type="date" class="input-full" id="txn-from" value="${new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0]}">
             </div>
             <div class="form-group mb-0">
               <label class="form-label" style="font-size:0.8rem">To Date</label>
@@ -471,27 +470,27 @@ const Pages = {
           </div>
         </div>
       `;
-    } catch(err) {
-      main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error: ${err.message}</p></div>`;
-    }
-  },
+                } catch (err) {
+                  main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error: ${err.message}</p></div>`;
+                }
+              },
 
-  // ── Accounts ──────────────────────────────────────────────────────────────
-  renderAccounts: async () => {
-    const main = document.getElementById('view-accounts');
-    main.innerHTML = `<div class="empty-state"><i class="fa fa-spinner spin"></i><p>Loading accounts...</p></div>`;
-    try {
-      const res = await Api.me();
-      const accs = res.accounts || [];
+                // ── Accounts ──────────────────────────────────────────────────────────────
+                renderAccounts: async () => {
+                  const main = document.getElementById('view-accounts');
+                  main.innerHTML = `<div class="empty-state"><i class="fa fa-spinner spin"></i><p>Loading accounts...</p></div>`;
+                  try {
+                    const res = await Api.me();
+                    const accs = res.accounts || [];
 
-      let accsHtml = accs.map(a => `
+                    let accsHtml = accs.map(a => `
         <div class="card mb-20">
           <div class="flex justify-between items-center mb-16">
             <div class="form-section-title mb-0"><i class="fa fa-university"></i> ${a.accountType.toUpperCase()} ACCOUNT</div>
             <span class="status-badge active">Active</span>
           </div>
           
-          <div class="balance-amount text-accent mb-16">₹${a.balance.toLocaleString('en-IN', {minimumFractionDigits:2})}</div>
+          <div class="balance-amount text-accent mb-16">₹${a.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
           
           <div class="grid-4 mt-16 pt-16" style="border-top:1px solid var(--border)">
             <div class="info-row flex-col" style="display:flex; flex-direction:column; gap:4px; border:none">
@@ -508,7 +507,7 @@ const Pages = {
             </div>
             <div class="info-row flex-col" style="display:flex; flex-direction:column; gap:4px; border:none">
               <span class="lbl">Nominee</span>
-              <span class="val">${a.nomineeName || '<a href="#" class="text-accent text-sm" onclick="Pages.addNominee(\''+a._id+'\');return false;">+ Add Nominee</a>'}</span>
+              <span class="val">${a.nomineeName || '<a href="#" class="text-accent text-sm" onclick="Pages.addNominee(\'' + a._id + '\');return false;">+ Add Nominee</a>'}</span>
             </div>
           </div>
           
@@ -518,17 +517,17 @@ const Pages = {
         </div>
       `).join('');
 
-      main.innerHTML = `
+                    main.innerHTML = `
         <div class="section-title"><i class="fa fa-university"></i> My Accounts</div>
         ${accsHtml}
       `;
-    } catch(err) {
-      main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error: ${err.message}</p></div>`;
-    }
-  },
+                  } catch (err) {
+                    main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error: ${err.message}</p></div>`;
+                  }
+                },
 
-  addNominee: (accId) => {
-    App.showCustomModal(`
+                  addNominee: (accId) => {
+                    App.showCustomModal(`
       <h2 class="modal-title"><i class="fa fa-user-shield text-accent"></i> Add Nominee</h2>
       <div class="form-group mt-16">
         <label class="form-label">Nominee Name</label>
@@ -536,32 +535,32 @@ const Pages = {
       </div>
       <button class="btn-primary w-full mt-20" onclick="Pages.saveNominee('${accId}')">Save Nominee</button>
     `);
-  },
+                  },
 
-  saveNominee: async (accId) => {
-    const name = document.getElementById('nominee-name').value;
-    if (!name) return App.toast('Please enter nominee name', 'error');
-    try {
-      await Api.put(`/accounts/${accId}/update`, { nomineeName: name });
-      App.toast('Nominee added successfully', 'success');
-      App.closeModal();
-      Pages.renderAccounts();
-    } catch (e) {
-      App.toast(e.message, 'error');
-    }
-  },
+                    saveNominee: async (accId) => {
+                      const name = document.getElementById('nominee-name').value;
+                      if (!name) return App.toast('Please enter nominee name', 'error');
+                      try {
+                        await Api.put(`/accounts/${accId}/update`, { nomineeName: name });
+                        App.toast('Nominee added successfully', 'success');
+                        App.closeModal();
+                        Pages.renderAccounts();
+                      } catch (e) {
+                        App.toast(e.message, 'error');
+                      }
+                    },
 
-  downloadStatement: () => {
-    App.toast('Generating PDF statement...', 'info');
-    setTimeout(() => {
-      App.toast('Statement_2026.pdf downloaded successfully.', 'success');
-    }, 1500);
-  },
+                      downloadStatement: () => {
+                        App.toast('Generating PDF statement...', 'info');
+                        setTimeout(() => {
+                          App.toast('Statement_2026.pdf downloaded successfully.', 'success');
+                        }, 1500);
+                      },
 
-  // ── Bills ─────────────────────────────────────────────────────────────────
-  renderBills: () => {
-    const main = document.getElementById('view-bills');
-    main.innerHTML = `
+                        // ── Bills ─────────────────────────────────────────────────────────────────
+                        renderBills: () => {
+                          const main = document.getElementById('view-bills');
+                          main.innerHTML = `
       <div class="section-title"><i class="fa fa-receipt"></i> Bill Payments</div>
       
       <div class="grid-2 mb-20">
@@ -604,10 +603,10 @@ const Pages = {
         </div>
       </div>
     `;
-  },
+                        },
 
-  showBillModal: (type) => {
-    App.showCustomModal(`
+                          showBillModal: (type) => {
+                            App.showCustomModal(`
       <h2 class="modal-title"><i class="fa fa-file-invoice-dollar text-accent"></i> Pay ${type}</h2>
       <div class="form-group mt-16">
         <label class="form-label">Consumer Number / ID</label>
@@ -619,50 +618,50 @@ const Pages = {
       </div>
       <button class="btn-primary w-full mt-20" onclick="Pages.payBill('${type}')">Pay Now</button>
     `);
-  },
+                          },
 
-  payBill: async (type) => {
-    const billId = document.getElementById('bill-id').value;
-    const amt = parseFloat(document.getElementById('bill-amt').value);
-    
-    if (!billId || !amt) return App.toast('Please enter valid details', 'error');
-    
-    try {
-      const data = {
-        fromAccountId: App.accounts[0]._id,
-        toAccountNumber: 'BILLER_' + type.replace(' ', '').toUpperCase(),
-        amount: amt,
-        mode: 'IMPS',
-        description: `Bill Payment - ${type} (${billId})`,
-        saveBeneficiary: false
-      };
-      
-      const btn = document.querySelector('#modal-content .btn-primary');
-      btn.innerHTML = `<i class="fa fa-spinner spin"></i> Processing...`;
-      btn.disabled = true;
-      
-      await Api.transfer(data);
-      App.toast(`${type} bill of ₹${amt} paid successfully!`, 'success');
-      App.closeModal();
-      Pages.renderDashboard(); // Refresh balance
-      App.navigate('dashboard');
-    } catch (e) {
-      App.toast(e.message, 'error');
-      const btn = document.querySelector('#modal-content .btn-primary');
-      btn.innerHTML = `Pay Now`;
-      btn.disabled = false;
-    }
-  },
+                            payBill: async (type) => {
+                              const billId = document.getElementById('bill-id').value;
+                              const amt = parseFloat(document.getElementById('bill-amt').value);
 
-  // ── Cards ─────────────────────────────────────────────────────────────────
-  renderCards: async () => {
-    const main = document.getElementById('view-cards');
-    main.innerHTML = `<div class="empty-state"><i class="fa fa-spinner spin"></i><p>Loading cards...</p></div>`;
-    try {
-      const res = await Api.getCards();
-      const cards = res.cards || [];
+                              if (!billId || !amt) return App.toast('Please enter valid details', 'error');
 
-      let cardsHtml = cards.map(c => `
+                              try {
+                                const data = {
+                                  fromAccountId: App.accounts[0]._id,
+                                  toAccountNumber: 'BILLER_' + type.replace(' ', '').toUpperCase(),
+                                  amount: amt,
+                                  mode: 'IMPS',
+                                  description: `Bill Payment - ${type} (${billId})`,
+                                  saveBeneficiary: false
+                                };
+
+                                const btn = document.querySelector('#modal-content .btn-primary');
+                                btn.innerHTML = `<i class="fa fa-spinner spin"></i> Processing...`;
+                                btn.disabled = true;
+
+                                await Api.transfer(data);
+                                App.toast(`${type} bill of ₹${amt} paid successfully!`, 'success');
+                                App.closeModal();
+                                Pages.renderDashboard(); // Refresh balance
+                                App.navigate('dashboard');
+                              } catch (e) {
+                                App.toast(e.message, 'error');
+                                const btn = document.querySelector('#modal-content .btn-primary');
+                                btn.innerHTML = `Pay Now`;
+                                btn.disabled = false;
+                              }
+                            },
+
+                              // ── Cards ─────────────────────────────────────────────────────────────────
+                              renderCards: async () => {
+                                const main = document.getElementById('view-cards');
+                                main.innerHTML = `<div class="empty-state"><i class="fa fa-spinner spin"></i><p>Loading cards...</p></div>`;
+                                try {
+                                  const res = await Api.getCards();
+                                  const cards = res.cards || [];
+
+                                  let cardsHtml = cards.map(c => `
         <div class="grid-2 mb-24">
           <div class="flex items-center justify-center">
             <div class="flip-card" onclick="this.classList.toggle('flipped')">
@@ -713,17 +712,17 @@ const Pages = {
         </div>
       `).join('');
 
-      main.innerHTML = `
+                                  main.innerHTML = `
         <div class="section-title"><i class="fa fa-credit-card"></i> Manage Cards</div>
         ${cards.length ? cardsHtml : '<div class="empty-state"><p>No cards issued</p></div>'}
       `;
-    } catch(err) {
-      main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error: ${err.message}</p></div>`;
-    }
-  },
+                                } catch (err) {
+                                  main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error: ${err.message}</p></div>`;
+                                }
+                              },
 
-  showEditLimitModal: (id, currentLimit) => {
-    App.showCustomModal(`
+                                showEditLimitModal: (id, currentLimit) => {
+                                  App.showCustomModal(`
       <h2 class="modal-title"><i class="fa fa-sliders-h text-accent"></i> Edit Card Limit</h2>
       <div class="form-group mt-16">
         <label class="form-label">New Daily Limit (₹)</label>
@@ -731,46 +730,46 @@ const Pages = {
       </div>
       <button class="btn-primary w-full mt-20" onclick="Pages.updateCardLimit('${id}')">Save Changes</button>
     `);
-  },
+                                },
 
-  updateCardLimit: async (id) => {
-    const limit = parseInt(document.getElementById('new-card-limit').value);
-    if (!limit || limit < 1000) return App.toast('Limit must be at least ₹1000', 'error');
-    try {
-      await Api.updateCard(id, { dailyLimit: limit });
-      App.toast('Card limit updated successfully', 'success');
-      App.closeModal();
-      Pages.renderCards();
-    } catch (e) {
-      App.toast(e.message, 'error');
-    }
-  },
+                                  updateCardLimit: async (id) => {
+                                    const limit = parseInt(document.getElementById('new-card-limit').value);
+                                    if (!limit || limit < 1000) return App.toast('Limit must be at least ₹1000', 'error');
+                                    try {
+                                      await Api.updateCard(id, { dailyLimit: limit });
+                                      App.toast('Card limit updated successfully', 'success');
+                                      App.closeModal();
+                                      Pages.renderCards();
+                                    } catch (e) {
+                                      App.toast(e.message, 'error');
+                                    }
+                                  },
 
-  toggleCardStatus: async (id, currentStatus) => {
-    const newStatus = currentStatus === 'active' ? 'blocked' : 'active';
-    if (!confirm(`Are you sure you want to ${newStatus === 'blocked' ? 'block' : 'unblock'} this card?`)) return;
-    try {
-      await Api.updateCard(id, { status: newStatus });
-      App.toast(`Card ${newStatus} successfully`, 'success');
-      Pages.renderCards();
-    } catch (e) {
-      App.toast(e.message, 'error');
-    }
-  },
+                                    toggleCardStatus: async (id, currentStatus) => {
+                                      const newStatus = currentStatus === 'active' ? 'blocked' : 'active';
+                                      if (!confirm(`Are you sure you want to ${newStatus === 'blocked' ? 'block' : 'unblock'} this card?`)) return;
+                                      try {
+                                        await Api.updateCard(id, { status: newStatus });
+                                        App.toast(`Card ${newStatus} successfully`, 'success');
+                                        Pages.renderCards();
+                                      } catch (e) {
+                                        App.toast(e.message, 'error');
+                                      }
+                                    },
 
-  // ── Investments & FD ──────────────────────────────────────────────────────
-  renderInvestments: async () => {
-    const main = document.getElementById('view-investments');
-    main.innerHTML = `<div class="empty-state"><i class="fa fa-spinner spin"></i><p>Loading...</p></div>`;
-    try {
-      const fdsRes = await Api.getFDs();
-      const me = await Api.me();
-      const acc = me.accounts[0];
-      const fds = fdsRes.fixedDeposits || [];
+                                      // ── Investments & FD ──────────────────────────────────────────────────────
+                                      renderInvestments: async () => {
+                                        const main = document.getElementById('view-investments');
+                                        main.innerHTML = `<div class="empty-state"><i class="fa fa-spinner spin"></i><p>Loading...</p></div>`;
+                                        try {
+                                          const fdsRes = await Api.getFDs();
+                                          const me = await Api.me();
+                                          const acc = me.accounts[0];
+                                          const fds = fdsRes.fixedDeposits || [];
 
-      let fdsHtml = fds.length === 0 
-        ? `<tr><td colspan="6" class="text-center">No active Fixed Deposits</td></tr>` 
-        : fds.map(f => `
+                                          let fdsHtml = fds.length === 0
+                                            ? `<tr><td colspan="6" class="text-center">No active Fixed Deposits</td></tr>`
+                                            : fds.map(f => `
             <tr>
               <td>${f.fdNumber}</td>
               <td class="font-bold">₹${f.principalAmount.toLocaleString('en-IN')}</td>
@@ -784,7 +783,7 @@ const Pages = {
             </tr>
           `).join('');
 
-      main.innerHTML = `
+                                          main.innerHTML = `
         <div class="section-title"><i class="fa fa-chart-line"></i> Investments & FDs</div>
         
         <div class="grid-2 mb-20">
@@ -848,62 +847,62 @@ const Pages = {
           </div>
         </div>
       `;
-    } catch(err) {
-      main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error: ${err.message}</p></div>`;
-    }
-  },
+                                        } catch (err) {
+                                          main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error: ${err.message}</p></div>`;
+                                        }
+                                      },
 
-  createFD: async (accId) => {
-    const amt = parseFloat(document.getElementById('fd-amt').value);
-    const tenure = parseInt(document.getElementById('fd-tenure').value);
-    let rate = 6.5;
-    if(tenure === 6) rate = 5.5;
-    if(tenure === 24) rate = 7.0;
-    if(tenure === 60) rate = 7.5;
+                                        createFD: async (accId) => {
+                                          const amt = parseFloat(document.getElementById('fd-amt').value);
+                                          const tenure = parseInt(document.getElementById('fd-tenure').value);
+                                          let rate = 6.5;
+                                          if (tenure === 6) rate = 5.5;
+                                          if (tenure === 24) rate = 7.0;
+                                          if (tenure === 60) rate = 7.5;
 
-    if(!amt || amt < 1000) return App.toast('Minimum amount is ₹1000', 'error');
+                                          if (!amt || amt < 1000) return App.toast('Minimum amount is ₹1000', 'error');
 
-    try {
-      await Api.createFD({ accountId: accId, amount: amt, tenureMonths: tenure, interestRate: rate });
-      App.toast('Fixed Deposit created successfully!', 'success');
-      App.navigate('investments');
-    } catch(err) {
-      App.toast(err.message, 'error');
-    }
-  },
+                                          try {
+                                            await Api.createFD({ accountId: accId, amount: amt, tenureMonths: tenure, interestRate: rate });
+                                            App.toast('Fixed Deposit created successfully!', 'success');
+                                            App.navigate('investments');
+                                          } catch (err) {
+                                            App.toast(err.message, 'error');
+                                          }
+                                        },
 
-  breakFD: async (id) => {
-    if(!confirm('Are you sure you want to break this Fixed Deposit early? A penalty may apply and interest will be recalculated.')) return;
-    try {
-      const res = await Api.breakFD(id);
-      App.toast(res.message, 'success');
-      App.navigate('investments');
-    } catch(err) {
-      App.toast(err.message, 'error');
-    }
-  },
+                                          breakFD: async (id) => {
+                                            if (!confirm('Are you sure you want to break this Fixed Deposit early? A penalty may apply and interest will be recalculated.')) return;
+                                            try {
+                                              const res = await Api.breakFD(id);
+                                              App.toast(res.message, 'success');
+                                              App.navigate('investments');
+                                            } catch (err) {
+                                              App.toast(err.message, 'error');
+                                            }
+                                          },
 
-  // ── Loans ─────────────────────────────────────────────────────────────────
-  renderLoans: async () => {
-    const main = document.getElementById('view-loans');
-    main.innerHTML = `<div class="empty-state"><i class="fa fa-spinner spin"></i><p>Loading...</p></div>`;
-    try {
-      const res = await Api.getLoans();
-      const loans = res.loans || [];
+                                            // ── Loans ─────────────────────────────────────────────────────────────────
+                                            renderLoans: async () => {
+                                              const main = document.getElementById('view-loans');
+                                              main.innerHTML = `<div class="empty-state"><i class="fa fa-spinner spin"></i><p>Loading...</p></div>`;
+                                              try {
+                                                const res = await Api.getLoans();
+                                                const loans = res.loans || [];
 
-      let loansHtml = loans.length === 0
-        ? `<tr><td colspan="5" class="text-center">No active loans</td></tr>`
-        : loans.map(l => `
+                                                let loansHtml = loans.length === 0
+                                                  ? `<tr><td colspan="5" class="text-center">No active loans</td></tr>`
+                                                  : loans.map(l => `
             <tr>
               <td style="text-transform:capitalize">${l.loanType}</td>
               <td class="font-bold">₹${l.amount.toLocaleString('en-IN')}</td>
               <td>${l.interestRate}%</td>
               <td class="text-accent font-bold">₹${l.emi.toLocaleString('en-IN')}/mo</td>
-              <td><span class="status-badge ${l.status === 'approved' ? 'active' : 'pending'}">${l.status.replace('_',' ').toUpperCase()}</span></td>
+              <td><span class="status-badge ${l.status === 'approved' ? 'active' : 'pending'}">${l.status.replace('_', ' ').toUpperCase()}</span></td>
             </tr>
           `).join('');
 
-      main.innerHTML = `
+                                                main.innerHTML = `
         <div class="section-title"><i class="fa fa-hand-holding-usd"></i> Loans</div>
         
         <div class="grid-2 mb-20">
@@ -989,61 +988,61 @@ const Pages = {
           </div>
         </div>
       `;
-    } catch(err) {
-      main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error: ${err.message}</p></div>`;
-    }
-  },
+                                              } catch (err) {
+                                                main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error: ${err.message}</p></div>`;
+                                              }
+                                            },
 
-  updateLoanRate: () => Pages.calcEMI(),
-  
-  calcEMI: () => {
-    const amt = parseFloat(document.getElementById('loan-amt')?.value) || 0;
-    const tenure = parseInt(document.getElementById('loan-tenure')?.value) || 0;
-    const type = document.getElementById('loan-type')?.value || 'personal';
-    
-    if(!amt || !tenure) {
-      document.getElementById('loan-emi-val').textContent = '0';
-      return;
-    }
-    
-    const rates = { personal: 12.5, home: 8.5, auto: 9.5 };
-    const rate = rates[type];
-    const monthlyRate = rate / 100 / 12;
-    const emi = (amt * monthlyRate * Math.pow(1 + monthlyRate, tenure)) / (Math.pow(1 + monthlyRate, tenure) - 1);
-    
-    document.getElementById('loan-emi-val').textContent = emi.toLocaleString('en-IN', {maximumFractionDigits:0});
-  },
+                                              updateLoanRate: () => Pages.calcEMI(),
 
-  applyLoan: async () => {
-    const d = {
-      loanType: document.getElementById('loan-type').value,
-      amount: parseFloat(document.getElementById('loan-amt').value),
-      tenureMonths: parseInt(document.getElementById('loan-tenure').value),
-      monthlyIncome: parseFloat(document.getElementById('loan-income').value),
-      purpose: 'General'
-    };
-    if(!d.amount || !d.tenureMonths || !d.monthlyIncome) return App.toast('Fill all fields', 'error');
+                                                calcEMI: () => {
+                                                  const amt = parseFloat(document.getElementById('loan-amt')?.value) || 0;
+                                                  const tenure = parseInt(document.getElementById('loan-tenure')?.value) || 0;
+                                                  const type = document.getElementById('loan-type')?.value || 'personal';
 
-    try {
-      await Api.applyLoan(d);
-      App.toast('Loan application submitted successfully!', 'success');
-      App.navigate('loans');
-    } catch(err) {
-      App.toast(err.message, 'error');
-    }
-  },
+                                                  if (!amt || !tenure) {
+                                                    document.getElementById('loan-emi-val').textContent = '0';
+                                                    return;
+                                                  }
 
-  // ── Beneficiaries ─────────────────────────────────────────────────────────
-  renderBeneficiaries: async () => {
-    const main = document.getElementById('view-beneficiaries');
-    main.innerHTML = `<div class="empty-state"><i class="fa fa-spinner spin"></i><p>Loading...</p></div>`;
-    try {
-      const res = await Api.getBeneficiaries();
-      const bens = res.beneficiaries || [];
+                                                  const rates = { personal: 12.5, home: 8.5, auto: 9.5 };
+                                                  const rate = rates[type];
+                                                  const monthlyRate = rate / 100 / 12;
+                                                  const emi = (amt * monthlyRate * Math.pow(1 + monthlyRate, tenure)) / (Math.pow(1 + monthlyRate, tenure) - 1);
 
-      let bensHtml = bens.length === 0
-        ? `<tr><td colspan="5" class="text-center">No saved beneficiaries</td></tr>`
-        : bens.map(b => `
+                                                  document.getElementById('loan-emi-val').textContent = emi.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+                                                },
+
+                                                  applyLoan: async () => {
+                                                    const d = {
+                                                      loanType: document.getElementById('loan-type').value,
+                                                      amount: parseFloat(document.getElementById('loan-amt').value),
+                                                      tenureMonths: parseInt(document.getElementById('loan-tenure').value),
+                                                      monthlyIncome: parseFloat(document.getElementById('loan-income').value),
+                                                      purpose: 'General'
+                                                    };
+                                                    if (!d.amount || !d.tenureMonths || !d.monthlyIncome) return App.toast('Fill all fields', 'error');
+
+                                                    try {
+                                                      await Api.applyLoan(d);
+                                                      App.toast('Loan application submitted successfully!', 'success');
+                                                      App.navigate('loans');
+                                                    } catch (err) {
+                                                      App.toast(err.message, 'error');
+                                                    }
+                                                  },
+
+                                                    // ── Beneficiaries ─────────────────────────────────────────────────────────
+                                                    renderBeneficiaries: async () => {
+                                                      const main = document.getElementById('view-beneficiaries');
+                                                      main.innerHTML = `<div class="empty-state"><i class="fa fa-spinner spin"></i><p>Loading...</p></div>`;
+                                                      try {
+                                                        const res = await Api.getBeneficiaries();
+                                                        const bens = res.beneficiaries || [];
+
+                                                        let bensHtml = bens.length === 0
+                                                          ? `<tr><td colspan="5" class="text-center">No saved beneficiaries</td></tr>`
+                                                          : bens.map(b => `
             <tr>
               <td class="font-bold">${b.nickname}</td>
               <td>${b.accountNumber}</td>
@@ -1055,7 +1054,7 @@ const Pages = {
             </tr>
           `).join('');
 
-      main.innerHTML = `
+                                                        main.innerHTML = `
         <div class="section-title"><i class="fa fa-users"></i> Beneficiaries</div>
         <div class="card" style="padding:0; overflow:hidden">
           <div class="flex justify-between items-center" style="padding:24px">
@@ -1080,13 +1079,13 @@ const Pages = {
           </div>
         </div>
       `;
-    } catch(err) {
-      main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error: ${err.message}</p></div>`;
-    }
-  },
+                                                      } catch (err) {
+                                                        main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error: ${err.message}</p></div>`;
+                                                      }
+                                                    },
 
-  showAddBenModal: () => {
-    App.showCustomModal(`
+                                                      showAddBenModal: () => {
+                                                        App.showCustomModal(`
       <h2 class="modal-title"><i class="fa fa-user-plus text-accent"></i> Add Beneficiary</h2>
       <div class="form-group">
         <label class="form-label">Nickname</label>
@@ -1102,43 +1101,43 @@ const Pages = {
       </div>
       <button class="btn-primary w-full mt-20" onclick="Pages.submitAddBen()">Save Beneficiary</button>
     `);
-  },
+                                                      },
 
-  submitAddBen: async () => {
-    const data = {
-      nickname: document.getElementById('ben-nick').value,
-      accountNumber: document.getElementById('ben-acc').value,
-      ifscCode: document.getElementById('ben-ifsc').value,
-      bankName: 'NexBank'
-    };
-    if (!data.nickname || !data.accountNumber || !data.ifscCode) return App.toast('Please fill all fields', 'error');
-    try {
-      await Api.addBeneficiary(data);
-      App.toast('Beneficiary added successfully', 'success');
-      App.closeModal();
-      Pages.renderBeneficiaries();
-    } catch (e) {
-      App.toast(e.message, 'error');
-    }
-  },
+                                                        submitAddBen: async () => {
+                                                          const data = {
+                                                            nickname: document.getElementById('ben-nick').value,
+                                                            accountNumber: document.getElementById('ben-acc').value,
+                                                            ifscCode: document.getElementById('ben-ifsc').value,
+                                                            bankName: 'NexBank'
+                                                          };
+                                                          if (!data.nickname || !data.accountNumber || !data.ifscCode) return App.toast('Please fill all fields', 'error');
+                                                          try {
+                                                            await Api.addBeneficiary(data);
+                                                            App.toast('Beneficiary added successfully', 'success');
+                                                            App.closeModal();
+                                                            Pages.renderBeneficiaries();
+                                                          } catch (e) {
+                                                            App.toast(e.message, 'error');
+                                                          }
+                                                        },
 
-  deleteBen: async (id) => {
-    if(!confirm('Delete this beneficiary?')) return;
-    try {
-      await Api.deleteBeneficiary(id);
-      App.toast('Beneficiary deleted', 'success');
-      App.navigate('beneficiaries');
-    } catch(err) {
-      App.toast(err.message, 'error');
-    }
-  },
+                                                          deleteBen: async (id) => {
+                                                            if (!confirm('Delete this beneficiary?')) return;
+                                                            try {
+                                                              await Api.deleteBeneficiary(id);
+                                                              App.toast('Beneficiary deleted', 'success');
+                                                              App.navigate('beneficiaries');
+                                                            } catch (err) {
+                                                              App.toast(err.message, 'error');
+                                                            }
+                                                          },
 
-  // ── Profile, Calculators, Support ─────────────────────────────────────────
-  renderProfile: async () => {
-    const main = document.getElementById('view-profile');
-    try {
-      const { user } = await Api.getProfile();
-      main.innerHTML = `
+                                                            // ── Profile, Calculators, Support ─────────────────────────────────────────
+                                                            renderProfile: async () => {
+                                                              const main = document.getElementById('view-profile');
+                                                              try {
+                                                                const { user } = await Api.getProfile();
+                                                                main.innerHTML = `
         <div class="section-title"><i class="fa fa-user-circle"></i> My Profile</div>
         <div class="card max-w-lg">
           <div class="form-group"><label class="form-label">First Name</label><input type="text" id="prof-fname" class="input-full" value="${user.firstName}"></div>
@@ -1185,32 +1184,32 @@ const Pages = {
           <button class="btn-outline w-full mt-16" style="border-color:var(--red); color:var(--red)" onclick="App.toast('All other sessions terminated', 'success')">Log out of all other devices</button>
         </div>
       `;
-    } catch(err) {}
-  },
+                                                              } catch (err) { }
+                                                            },
 
-  updateProfile: async () => {
-    const data = {
-      firstName: document.getElementById('prof-fname').value,
-      lastName: document.getElementById('prof-lname').value,
-      phone: document.getElementById('prof-phone').value,
-      address: document.getElementById('prof-addr').value
-    };
-    try {
-      const res = await Api.updateProfile(data);
-      App.toast(res.message, 'success');
-      App.user = res.user;
-      const initials = (res.user.firstName[0] + res.user.lastName[0]).toUpperCase();
-      document.getElementById('sidebar-name').textContent = res.user.firstName + ' ' + res.user.lastName;
-      document.getElementById('sidebar-avatar').textContent = initials;
-      document.getElementById('topbar-avatar').textContent = initials;
-    } catch (e) {
-      App.toast(e.message, 'error');
-    }
-  },
+                                                              updateProfile: async () => {
+                                                                const data = {
+                                                                  firstName: document.getElementById('prof-fname').value,
+                                                                  lastName: document.getElementById('prof-lname').value,
+                                                                  phone: document.getElementById('prof-phone').value,
+                                                                  address: document.getElementById('prof-addr').value
+                                                                };
+                                                                try {
+                                                                  const res = await Api.updateProfile(data);
+                                                                  App.toast(res.message, 'success');
+                                                                  App.user = res.user;
+                                                                  const initials = (res.user.firstName[0] + res.user.lastName[0]).toUpperCase();
+                                                                  document.getElementById('sidebar-name').textContent = res.user.firstName + ' ' + res.user.lastName;
+                                                                  document.getElementById('sidebar-avatar').textContent = initials;
+                                                                  document.getElementById('topbar-avatar').textContent = initials;
+                                                                } catch (e) {
+                                                                  App.toast(e.message, 'error');
+                                                                }
+                                                              },
 
-  renderCalculators: () => {
-    const main = document.getElementById('view-calculators');
-    main.innerHTML = `
+                                                                renderCalculators: () => {
+                                                                  const main = document.getElementById('view-calculators');
+                                                                  main.innerHTML = `
       <div class="section-title"><i class="fa fa-calculator"></i> Financial Calculators</div>
       
       <div class="grid-2">
@@ -1332,89 +1331,89 @@ const Pages = {
         </div>
       </div>
     `;
-    Pages.runCalc('emi');
-    Pages.runCalc('fd');
-    Pages.runCalc('sip');
-    Pages.runCalc('tax');
-    Pages.runCalc('inf');
-  },
+                                                                  Pages.runCalc('emi');
+                                                                  Pages.runCalc('fd');
+                                                                  Pages.runCalc('sip');
+                                                                  Pages.runCalc('tax');
+                                                                  Pages.runCalc('inf');
+                                                                },
 
-  runCalc: (type) => {
-    if (type === 'emi') {
-      const p = parseFloat(document.getElementById('calc-emi-amt').value) || 0;
-      const r = parseFloat(document.getElementById('calc-emi-rate').value) || 0;
-      const n = (parseFloat(document.getElementById('calc-emi-years').value) || 0) * 12;
-      if(p>0 && r>0 && n>0) {
-        const monthlyRate = r / 100 / 12;
-        const emi = (p * monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1);
-        const totalPaid = emi * n;
-        document.getElementById('calc-emi-res').textContent = emi.toLocaleString('en-IN', {maximumFractionDigits:0});
-        document.getElementById('calc-emi-int').textContent = (totalPaid - p).toLocaleString('en-IN', {maximumFractionDigits:0});
-      }
-    } else if (type === 'fd') {
-      const p = parseFloat(document.getElementById('calc-fd-amt').value) || 0;
-      const r = parseFloat(document.getElementById('calc-fd-rate').value) || 0;
-      const t = parseFloat(document.getElementById('calc-fd-years').value) || 0;
-      if(p>0 && r>0 && t>0) {
-        // Compound quarterly
-        const maturity = p * Math.pow(1 + (r / 100) / 4, 4 * t);
-        document.getElementById('calc-fd-res').textContent = maturity.toLocaleString('en-IN', {maximumFractionDigits:0});
-        document.getElementById('calc-fd-int').textContent = (maturity - p).toLocaleString('en-IN', {maximumFractionDigits:0});
-      }
-    } else if (type === 'sip') {
-      const p = parseFloat(document.getElementById('calc-sip-amt').value) || 0;
-      const r = parseFloat(document.getElementById('calc-sip-rate').value) || 0;
-      const t = parseFloat(document.getElementById('calc-sip-years').value) || 0;
-      if(p>0 && r>0 && t>0) {
-        const i = r / 100 / 12;
-        const n = t * 12;
-        const maturity = p * ((Math.pow(1 + i, n) - 1) / i) * (1 + i);
-        document.getElementById('calc-sip-res').textContent = maturity.toLocaleString('en-IN', {maximumFractionDigits:0});
-        document.getElementById('calc-sip-inv').textContent = (p * n).toLocaleString('en-IN', {maximumFractionDigits:0});
-      }
-    } else if (type === 'tax') {
-      const inc = parseFloat(document.getElementById('calc-tax-inc').value) || 0;
-      const ded = parseFloat(document.getElementById('calc-tax-ded').value) || 0;
-      
-      // Simple mockup calculation
-      let oldTax = 0;
-      let taxableOld = Math.max(0, inc - ded - 50000); // 50k standard ded
-      if (taxableOld > 1000000) oldTax = 112500 + (taxableOld - 1000000) * 0.3;
-      else if (taxableOld > 500000) oldTax = 12500 + (taxableOld - 500000) * 0.2;
-      else if (taxableOld > 250000) oldTax = (taxableOld - 250000) * 0.05;
-      
-      let newTax = 0;
-      let taxableNew = Math.max(0, inc - 50000); // 50k standard ded
-      if (taxableNew > 1500000) newTax = 150000 + (taxableNew - 1500000) * 0.3;
-      else if (taxableNew > 1200000) newTax = 90000 + (taxableNew - 1200000) * 0.2;
-      else if (taxableNew > 900000) newTax = 45000 + (taxableNew - 900000) * 0.15;
-      else if (taxableNew > 600000) newTax = 15000 + (taxableNew - 600000) * 0.1;
-      else if (taxableNew > 300000) newTax = (taxableNew - 300000) * 0.05;
-      
-      // Rebate 87A (Simplified)
-      if(taxableOld <= 500000) oldTax = 0;
-      if(taxableNew <= 700000) newTax = 0;
-      
-      // Cess
-      oldTax = oldTax * 1.04;
-      newTax = newTax * 1.04;
+                                                                  runCalc: (type) => {
+                                                                    if (type === 'emi') {
+                                                                      const p = parseFloat(document.getElementById('calc-emi-amt').value) || 0;
+                                                                      const r = parseFloat(document.getElementById('calc-emi-rate').value) || 0;
+                                                                      const n = (parseFloat(document.getElementById('calc-emi-years').value) || 0) * 12;
+                                                                      if (p > 0 && r > 0 && n > 0) {
+                                                                        const monthlyRate = r / 100 / 12;
+                                                                        const emi = (p * monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1);
+                                                                        const totalPaid = emi * n;
+                                                                        document.getElementById('calc-emi-res').textContent = emi.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+                                                                        document.getElementById('calc-emi-int').textContent = (totalPaid - p).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+                                                                      }
+                                                                    } else if (type === 'fd') {
+                                                                      const p = parseFloat(document.getElementById('calc-fd-amt').value) || 0;
+                                                                      const r = parseFloat(document.getElementById('calc-fd-rate').value) || 0;
+                                                                      const t = parseFloat(document.getElementById('calc-fd-years').value) || 0;
+                                                                      if (p > 0 && r > 0 && t > 0) {
+                                                                        // Compound quarterly
+                                                                        const maturity = p * Math.pow(1 + (r / 100) / 4, 4 * t);
+                                                                        document.getElementById('calc-fd-res').textContent = maturity.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+                                                                        document.getElementById('calc-fd-int').textContent = (maturity - p).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+                                                                      }
+                                                                    } else if (type === 'sip') {
+                                                                      const p = parseFloat(document.getElementById('calc-sip-amt').value) || 0;
+                                                                      const r = parseFloat(document.getElementById('calc-sip-rate').value) || 0;
+                                                                      const t = parseFloat(document.getElementById('calc-sip-years').value) || 0;
+                                                                      if (p > 0 && r > 0 && t > 0) {
+                                                                        const i = r / 100 / 12;
+                                                                        const n = t * 12;
+                                                                        const maturity = p * ((Math.pow(1 + i, n) - 1) / i) * (1 + i);
+                                                                        document.getElementById('calc-sip-res').textContent = maturity.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+                                                                        document.getElementById('calc-sip-inv').textContent = (p * n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+                                                                      }
+                                                                    } else if (type === 'tax') {
+                                                                      const inc = parseFloat(document.getElementById('calc-tax-inc').value) || 0;
+                                                                      const ded = parseFloat(document.getElementById('calc-tax-ded').value) || 0;
 
-      document.getElementById('calc-tax-res').textContent = oldTax.toLocaleString('en-IN', {maximumFractionDigits:0});
-      document.getElementById('calc-tax-new').textContent = newTax.toLocaleString('en-IN', {maximumFractionDigits:0});
-    } else if (type === 'inf') {
-      const p = parseFloat(document.getElementById('calc-inf-amt').value) || 0;
-      const r = parseFloat(document.getElementById('calc-inf-rate').value) || 0;
-      const t = parseFloat(document.getElementById('calc-inf-years').value) || 0;
-      if(p>0 && r>0 && t>0) {
-        const fv = p * Math.pow(1 + r/100, t);
-        document.getElementById('calc-inf-res').textContent = fv.toLocaleString('en-IN', {maximumFractionDigits:0});
-      }
-    }
-  },
+                                                                      // Simple mockup calculation
+                                                                      let oldTax = 0;
+                                                                      let taxableOld = Math.max(0, inc - ded - 50000); // 50k standard ded
+                                                                      if (taxableOld > 1000000) oldTax = 112500 + (taxableOld - 1000000) * 0.3;
+                                                                      else if (taxableOld > 500000) oldTax = 12500 + (taxableOld - 500000) * 0.2;
+                                                                      else if (taxableOld > 250000) oldTax = (taxableOld - 250000) * 0.05;
 
-  renderSupport: () => {
-    const main = document.getElementById('view-support');
-    main.innerHTML = `
+                                                                      let newTax = 0;
+                                                                      let taxableNew = Math.max(0, inc - 50000); // 50k standard ded
+                                                                      if (taxableNew > 1500000) newTax = 150000 + (taxableNew - 1500000) * 0.3;
+                                                                      else if (taxableNew > 1200000) newTax = 90000 + (taxableNew - 1200000) * 0.2;
+                                                                      else if (taxableNew > 900000) newTax = 45000 + (taxableNew - 900000) * 0.15;
+                                                                      else if (taxableNew > 600000) newTax = 15000 + (taxableNew - 600000) * 0.1;
+                                                                      else if (taxableNew > 300000) newTax = (taxableNew - 300000) * 0.05;
+
+                                                                      // Rebate 87A (Simplified)
+                                                                      if (taxableOld <= 500000) oldTax = 0;
+                                                                      if (taxableNew <= 700000) newTax = 0;
+
+                                                                      // Cess
+                                                                      oldTax = oldTax * 1.04;
+                                                                      newTax = newTax * 1.04;
+
+                                                                      document.getElementById('calc-tax-res').textContent = oldTax.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+                                                                      document.getElementById('calc-tax-new').textContent = newTax.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+                                                                    } else if (type === 'inf') {
+                                                                      const p = parseFloat(document.getElementById('calc-inf-amt').value) || 0;
+                                                                      const r = parseFloat(document.getElementById('calc-inf-rate').value) || 0;
+                                                                      const t = parseFloat(document.getElementById('calc-inf-years').value) || 0;
+                                                                      if (p > 0 && r > 0 && t > 0) {
+                                                                        const fv = p * Math.pow(1 + r / 100, t);
+                                                                        document.getElementById('calc-inf-res').textContent = fv.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+                                                                      }
+                                                                    }
+                                                                  },
+
+                                                                    renderSupport: () => {
+                                                                      const main = document.getElementById('view-support');
+                                                                      main.innerHTML = `
       <div class="section-title"><i class="fa fa-headset"></i> Support & Services</div>
       <div class="grid-2">
         <div class="card">
@@ -1448,27 +1447,27 @@ const Pages = {
         </div>
       </div>
     `;
-  },
+                                                                    },
 
-  // ── Admin ─────────────────────────────────────────────────────────────────
-  renderAdmin: async () => {
-    const main = document.getElementById('view-admin');
-    main.innerHTML = `<div class="empty-state"><i class="fa fa-spinner spin"></i><p>Loading Admin Panel...</p></div>`;
-    try {
-      if(App.user.role !== 'admin') throw new Error('Access Denied');
-      
-      const statsRes = await Api.getAdminStats();
-      const usersRes = await Api.getAdminUsers();
-      
-      let usersHtml = usersRes.users.length === 0 ? `<tr><td colspan="6" class="text-center">No users found</td></tr>` : usersRes.users.map(u => `
+                                                                      // ── Admin ─────────────────────────────────────────────────────────────────
+                                                                      renderAdmin: async () => {
+                                                                        const main = document.getElementById('view-admin');
+                                                                        main.innerHTML = `<div class="empty-state"><i class="fa fa-spinner spin"></i><p>Loading Admin Panel...</p></div>`;
+                                                                        try {
+                                                                          if (App.user.role !== 'admin') throw new Error('Access Denied');
+
+                                                                          const statsRes = await Api.getAdminStats();
+                                                                          const usersRes = await Api.getAdminUsers();
+
+                                                                          let usersHtml = usersRes.users.length === 0 ? `<tr><td colspan="6" class="text-center">No users found</td></tr>` : usersRes.users.map(u => `
         <tr>
           <td class="font-bold">${u.name}</td>
           <td>${u.email}</td>
           <td>${u.accountNumber}</td>
-          <td class="font-bold text-accent">₹${u.balance.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
+          <td class="font-bold text-accent">₹${u.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
           <td><span class="status-badge ${u.status === 'active' ? 'active' : 'blocked'}">${u.status.toUpperCase()}</span></td>
           <td class="text-right">
-            <button class="btn-outline" style="width:auto; padding:6px 12px; margin:0; font-size:0.75rem; border-color:${u.status==='active'?'var(--red)':'var(--green)'}; color:${u.status==='active'?'var(--red)':'var(--green)'}" onclick="Pages.blockUser('${u.id}')">
+            <button class="btn-outline" style="width:auto; padding:6px 12px; margin:0; font-size:0.75rem; border-color:${u.status === 'active' ? 'var(--red)' : 'var(--green)'}; color:${u.status === 'active' ? 'var(--red)' : 'var(--green)'}" onclick="Pages.blockUser('${u.id}')">
               ${u.status === 'active' ? 'Block User' : 'Unblock'}
             </button>
             <button class="btn-primary" style="width:auto; padding:6px 12px; margin:0; font-size:0.75rem; background:var(--gold); border:none; margin-left:8px;" onclick="Pages.approveKYC('${u.id}')">
@@ -1478,7 +1477,7 @@ const Pages = {
         </tr>
       `).join('');
 
-      main.innerHTML = `
+                                                                          main.innerHTML = `
         <div class="section-title"><i class="fa fa-shield-alt text-gold"></i> Admin Control Panel</div>
         
         <div class="grid-4 mb-20">
@@ -1529,36 +1528,36 @@ const Pages = {
           </div>
         </div>
       `;
-    } catch(err) {
-      main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error: ${err.message}</p></div>`;
-    }
-  },
+                                                                        } catch (err) {
+                                                                          main.innerHTML = `<div class="empty-state"><i class="fa fa-exclamation-circle text-red"></i><p>Error: ${err.message}</p></div>`;
+                                                                        }
+                                                                      },
 
-  blockUser: async (id) => {
-    if(!confirm("Are you sure you want to change this user's status?")) return;
-    try {
-      const res = await Api.blockUser(id);
-      App.toast(res.message, 'success');
-      Pages.renderAdmin();
-    } catch(err) {
-      App.toast(err.message, 'error');
-    }
-  },
+                                                                        blockUser: async (id) => {
+                                                                          if (!confirm("Are you sure you want to change this user's status?")) return;
+                                                                          try {
+                                                                            const res = await Api.blockUser(id);
+                                                                            App.toast(res.message, 'success');
+                                                                            Pages.renderAdmin();
+                                                                          } catch (err) {
+                                                                            App.toast(err.message, 'error');
+                                                                          }
+                                                                        },
 
-  approveKYC: async (id) => {
-    if(!confirm("Are you sure you want to approve KYC for this user?")) return;
-    try {
-      App.toast("KYC Approved successfully", "success");
-      // Simulate API call
-      setTimeout(() => Pages.renderAdmin(), 500);
-    } catch(err) {
-      App.toast(err.message, "error");
-    }
-  },
+                                                                          approveKYC: async (id) => {
+                                                                            if (!confirm("Are you sure you want to approve KYC for this user?")) return;
+                                                                            try {
+                                                                              App.toast("KYC Approved successfully", "success");
+                                                                              // Simulate API call
+                                                                              setTimeout(() => Pages.renderAdmin(), 500);
+                                                                            } catch (err) {
+                                                                              App.toast(err.message, "error");
+                                                                            }
+                                                                          },
 
-  renderNotifications: () => {
-    const main = document.getElementById('view-notifications');
-    main.innerHTML = `
+                                                                            renderNotifications: () => {
+                                                                              const main = document.getElementById('view-notifications');
+                                                                              main.innerHTML = `
       <div class="flex justify-between items-center mb-20">
         <div class="section-title mb-0"><i class="fa fa-bell"></i> Notifications</div>
         <button class="btn-outline" style="width:auto; padding:6px 12px; margin:0;" onclick="Pages.markAllRead()"><i class="fa fa-check-double"></i> Mark All Read</button>
@@ -1596,15 +1595,15 @@ const Pages = {
         <div style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">You are eligible for an instant personal loan of up to ₹2,50,000. Apply now!</div>
       </div>
     `;
-    
-    // Reset badge
-    const badge = document.getElementById('notif-badge');
-    if(badge) badge.classList.add('hidden');
-  },
 
-  markAllRead: () => {
-    const notifs = document.querySelectorAll('#view-notifications .card');
-    notifs.forEach(n => n.style.borderLeft = 'none');
-    App.toast('All notifications marked as read', 'success');
-  }
+                                                                              // Reset badge
+                                                                              const badge = document.getElementById('notif-badge');
+                                                                              if (badge) badge.classList.add('hidden');
+                                                                            },
+
+                                                                              markAllRead: () => {
+                                                                                const notifs = document.querySelectorAll('#view-notifications .card');
+                                                                                notifs.forEach(n => n.style.borderLeft = 'none');
+                                                                                App.toast('All notifications marked as read', 'success');
+                                                                              }
 };
