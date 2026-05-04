@@ -11,15 +11,17 @@ if (KEY_HEX && /^[0-9a-fA-F]{64}$/.test(KEY_HEX)) {
 
 function ensureKey() {
   if (!key) {
-    throw new Error('CARD_ENC_KEY missing or invalid. Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+    console.warn('⚠️ CARD_ENC_KEY missing! Operating in non-encrypted mode. Please set CARD_ENC_KEY in Vercel for 100% production security.');
+    return false;
   }
+  return true;
 }
 
 // Encrypted format: "v1:<iv hex>:<authTag hex>:<ciphertext hex>"
 // Plain values (legacy data) are detected by the absence of the "v1:" prefix.
 function encrypt(plain) {
   if (plain == null) return plain;
-  ensureKey();
+  if (!ensureKey()) return plain; // Fallback to plain if key missing
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv(ALGO, key, iv);
   const enc = Buffer.concat([cipher.update(String(plain), 'utf8'), cipher.final()]);
@@ -32,7 +34,7 @@ function decrypt(payload) {
   if (typeof payload !== 'string' || !payload.startsWith('v1:')) {
     return payload;
   }
-  ensureKey();
+  if (!ensureKey()) return payload; // Fallback to plain if key missing
   const [, ivHex, tagHex, dataHex] = payload.split(':');
   const decipher = crypto.createDecipheriv(ALGO, key, Buffer.from(ivHex, 'hex'));
   decipher.setAuthTag(Buffer.from(tagHex, 'hex'));

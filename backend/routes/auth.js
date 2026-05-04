@@ -72,7 +72,7 @@ router.post('/register',
 
       let referredBy = null;
       if (referralCode) {
-        const referrer = await User.findOne({ referralCode: String(referralCode).toUpperCase() });
+        const referrer = await Users.findOne({ referralCode: String(referralCode).toUpperCase() });
         if (referrer) referredBy = referrer._id;
       }
 
@@ -166,7 +166,7 @@ router.post('/login', loginLimiter,
           updates.lockedUntil = new Date(Date.now() + LOCKOUT_MS);
           updates.failedLoginCount = 0;
         }
-        await User.updateOne({ _id: user._id }, updates);
+        await Users.updateOne({ _id: user._id }, updates);
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 
@@ -184,7 +184,7 @@ router.post('/login', loginLimiter,
       const accounts = await Accounts.findByUserId(user._id);
       const primaryAccount = accounts[0];
 
-      await User.updateOne({ _id: user._id }, {
+      await Users.updateOne({ _id: user._id }, {
         lastLogin: new Date(),
         failedLoginCount: 0,
         lockedUntil: null
@@ -281,7 +281,7 @@ router.post('/reset-password',
       if (!user) return res.status(400).json({ error: 'Invalid or expired code' });
 
       const passwordHash = await bcrypt.hash(password, 12);
-      await User.updateOne({ _id: user._id }, { passwordHash, failedLoginCount: 0, lockedUntil: null });
+      await Users.updateOne({ _id: user._id }, { passwordHash, failedLoginCount: 0, lockedUntil: null });
       await RefreshTokens.deleteAllForUser(user._id);
 
       await Notifications.create({
@@ -316,7 +316,7 @@ router.post('/change-password', authMiddleware, passwordChangeLimiter,
       if (!ok) return res.status(400).json({ error: 'Current password is incorrect' });
 
       const newHash = await bcrypt.hash(newPassword, 12);
-      await User.updateOne({ _id: user._id }, { passwordHash: newHash });
+      await Users.updateOne({ _id: user._id }, { passwordHash: newHash });
       await RefreshTokens.deleteAllForUser(user._id);
 
       await Notifications.create({
@@ -352,7 +352,7 @@ router.post('/2fa/enroll', authMiddleware, async (req, res) => {
     const secret = totpService.generateSecret();
     // Stash encrypted secret pending verification — we only mark `enabled:true`
     // once the user proves they can produce a valid code.
-    await User.updateOne({ _id: user._id }, {
+    await Users.updateOne({ _id: user._id }, {
       'twoFA.secret': totpService.encryptSecret(secret),
       'twoFA.enabled': false
     });
@@ -379,7 +379,7 @@ router.post('/2fa/verify', authMiddleware,
       // Issue 8 single-use backup codes (hashed at rest).
       const plain = Array.from({ length: 8 }, () => crypto.randomBytes(5).toString('hex').toUpperCase());
       const hashed = await Promise.all(plain.map(c => bcrypt.hash(c, 8)));
-      await User.updateOne({ _id: user._id }, { 'twoFA.enabled': true, 'twoFA.backupCodes': hashed });
+      await Users.updateOne({ _id: user._id }, { 'twoFA.enabled': true, 'twoFA.backupCodes': hashed });
       await Notifications.create({
         userId: user._id, type: 'security',
         title: 'Two-factor authentication enabled',
@@ -410,7 +410,7 @@ router.post('/2fa/disable', authMiddleware,
         const secret = totpService.decryptSecret(user.twoFA.secret);
         if (!totpService.verify(secret, code)) return res.status(400).json({ error: 'Invalid 2FA code' });
       }
-      await User.updateOne({ _id: user._id }, {
+      await Users.updateOne({ _id: user._id }, {
         'twoFA.enabled': false, 'twoFA.secret': null, 'twoFA.backupCodes': []
       });
       await Notifications.create({

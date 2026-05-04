@@ -282,7 +282,9 @@ const Users = {
     return await new User({ ...data, role }).save();
   },
   update: async (id, updates) => { await connectDB(); return await User.findByIdAndUpdate(id, updates, { new: true }); },
-  getAll: async () => { await connectDB(); return await User.find(); }
+  getAll: async () => { await connectDB(); return await User.find(); },
+  findOne: async (q) => { await connectDB(); return await User.findOne(q); },
+  updateOne: async (q, u) => { await connectDB(); return await User.updateOne(q, u); }
 };
 
 const Accounts = {
