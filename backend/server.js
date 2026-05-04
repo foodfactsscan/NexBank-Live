@@ -9,6 +9,7 @@
 //  shutdown that drains in-flight transfers before exit.
 // ───────────────────────────────────────────────────────────────────────────
 
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -16,7 +17,6 @@ const morgan = require('morgan');
 const http = require('http');
 const WebSocket = require('ws');
 const path = require('path');
-require('dotenv').config();
 
 // ─── ENV validation ──────────────────────────────────────────────────────────
 const requiredEnv = ['MONGODB_URI', 'JWT_SECRET'];
@@ -224,6 +224,8 @@ app.use((err, req, res, next) => {
   console.error(`[${req.requestId || 'no-id'}]`, err.stack || err);
   res.status(err.status || 500).json({
     error: err.message || 'Internal Server Error',
+    diagnostic: err.message,
+    stack: isProd ? null : err.stack,
     requestId: req.requestId,
     timestamp: new Date().toISOString()
   });

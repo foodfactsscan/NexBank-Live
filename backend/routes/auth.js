@@ -128,7 +128,11 @@ router.post('/register',
       });
     } catch (err) {
       console.error('Register error:', err);
-      res.status(500).json({ error: 'Registration failed. Please try again.' });
+      res.status(500).json({ 
+        error: 'Registration failed due to a server error.',
+        diagnostic: err.message,
+        stack: process.env.NODE_ENV === 'production' ? null : err.stack
+      });
     }
   });
 
@@ -210,7 +214,11 @@ router.post('/login', loginLimiter,
       });
     } catch (err) {
       console.error('Login error:', err);
-      res.status(500).json({ error: 'Login failed. Please try again.' });
+      res.status(500).json({ 
+        error: 'Login failed due to a server error.',
+        diagnostic: err.message,
+        stack: process.env.NODE_ENV === 'production' ? null : err.stack
+      });
     }
   });
 
