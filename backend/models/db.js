@@ -217,5 +217,6 @@ const Loans = {
 
 module.exports = { 
   Users, Accounts, Transactions, Notifications, Beneficiaries, FixedDeposits, Cards, Loans,
+  User, Account, Transaction, // Exporting raw models for aggregation
   connectDB, generateTransactionId, mongoose, getLastError: () => lastError
 };

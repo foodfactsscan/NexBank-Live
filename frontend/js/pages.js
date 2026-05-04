@@ -9,10 +9,18 @@ const Pages = {
       const acc = accounts[0];
       
       let summary = { monthlyIncome: 0, monthlyExpense: 0, categoryBreakdown: {}, monthlyData: [] };
+      let summaryRes;
       try {
-        const summaryRes = await Api.getSummary(acc.id);
-        summary = summaryRes.summary;
-      } catch(e) { console.error('Summary load failed', e); }
+        summaryRes = await Api.getSummary(acc.id);
+      } catch(e) { 
+        console.warn('Summary load failed, retrying...', e); 
+        try {
+          summaryRes = await Api.getSummary(acc.id);
+        } catch(e2) {
+          console.error('Final summary load failure', e2);
+        }
+      }
+      if (summaryRes) summary = summaryRes.summary;
 
       let txns = [];
       try {
