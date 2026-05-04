@@ -90,7 +90,9 @@ const WS = {
 
     this.socket.onopen = () => {
       clearTimeout(this.reconnectTimer);
-      this.socket.send(JSON.stringify({ type: 'authenticate', accountId }));
+      const token = Api._token || localStorage.getItem('nexbank_token');
+      if (!token) { try { this.socket.close(); } catch {} return; }
+      this.socket.send(JSON.stringify({ type: 'authenticate', token, accountId }));
       document.getElementById('ws-badge')?.classList.remove('offline');
     };
     this.socket.onmessage = (e) => {

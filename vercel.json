@@ -1,16 +1,21 @@
 {
   "version": 2,
+  "buildCommand": "cd web && npm install && npm run build",
+  "outputDirectory": "web/dist",
   "builds": [
     { "src": "backend/server.js", "use": "@vercel/node" },
-    { "src": "frontend/**", "use": "@vercel/static" }
+    { "src": "web/dist/**", "use": "@vercel/static" }
   ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/backend/server.js" },
     { "source": "/ws(.*)", "destination": "/backend/server.js" },
-    { "source": "/css/(.*)", "destination": "/frontend/css/$1" },
-    { "source": "/js/(.*)", "destination": "/frontend/js/$1" },
-    { "source": "/images/(.*)", "destination": "/frontend/images/$1" },
-    { "source": "/", "destination": "/frontend/index.html" },
-    { "source": "/(.*)", "destination": "/frontend/index.html" }
+    { "source": "/assets/(.*)", "destination": "/web/dist/assets/$1" },
+    { "source": "/icons/(.*)", "destination": "/web/dist/icons/$1" },
+    { "source": "/icon.svg", "destination": "/web/dist/icon.svg" },
+    { "source": "/manifest.webmanifest", "destination": "/web/dist/manifest.webmanifest" },
+    { "source": "/sw.js", "destination": "/web/dist/sw.js" },
+    { "source": "/registerSW.js", "destination": "/web/dist/registerSW.js" },
+    { "source": "/workbox-(.*).js", "destination": "/web/dist/workbox-$1.js" },
+    { "source": "/(.*)", "destination": "/web/dist/index.html" }
   ]
 }

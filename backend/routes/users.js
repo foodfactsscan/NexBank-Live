@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
+const { body } = require('express-validator');
 const authMiddleware = require('../middleware/auth');
-const { Users, Accounts, Cards, Loans, Notifications } = require('../models/db');
+const validate = require('../middleware/validate');
+const { Users, Accounts, Cards, Loans, Notifications, User } = require('../models/db');
+const { lookupLimiter } = require('../middleware/rateLimit');
 const mongoose = require('mongoose');
 
 // GET /api/users/profile
@@ -160,8 +163,33 @@ router.get('/loans', authMiddleware, async (req, res) => {
   }
 });
 
+// PUT /api/users/username — claim or change a P2P username
+router.put('/username',
+  authMiddleware,
+  validate([body('username').isString().trim().toLowerCase().matches(/^[a-z0-9_.]{3,32}$/)
+    .withMessage('Username must be 3–32 chars: a–z, 0–9, _ or .')]),
+  async (req, res) => {
+    const username = req.body.username;
+    const taken = await User.findOne({ username });
+    if (taken && taken._id.toString() !== req.user.userId) {
+      return res.status(409).json({ error: 'Username already taken' });
+    }
+    await User.updateOne({ _id: req.user.userId }, { username });
+    res.json({ username });
+  });
+
+// GET /api/users/username/:username — public-ish lookup for "send to @user" UI
+router.get('/username/:username', authMiddleware, lookupLimiter, async (req, res) => {
+  const u = await User.findOne({ username: String(req.params.username).toLowerCase() });
+  if (!u) return res.status(404).json({ error: 'No user with that username' });
+  res.json({
+    username: u.username,
+    name: `${u.firstName} ${u.lastName}`
+  });
+});
+
 // GET /api/users/lookup/:accountNumber - Look up account holder (for sending money)
-router.get('/lookup/:accountNumber', authMiddleware, async (req, res) => {
+router.get('/lookup/:accountNumber', authMiddleware, lookupLimiter, async (req, res) => {
   try {
     const account = await Accounts.findByAccountNumber(req.params.accountNumber);
     if (!account || account.status !== 'active') {

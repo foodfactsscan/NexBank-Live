@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5" />
+    <meta name="theme-color" content="#0A0E1A" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="description" content="NexBank — Premium digital banking. Instant transfers, savings goals, virtual cards, real-time insights." />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
+
+    <title>NexBank — Premium digital banking</title>
+  </head>
+  <body>
+    <div id="root">
+      <!-- First-paint shell while React boots. Inline so it survives even if JS chokes. -->
+      <div style="position:fixed;inset:0;display:grid;place-items:center;background:#0A0E1A;color:#F8FAFC;font-family:Inter,sans-serif">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:16px">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#6366F1,#06B6D4);display:grid;place-items:center;font-weight:800;font-size:24px;letter-spacing:-0.04em">N</div>
+          <div style="font-weight:600;font-size:14px;color:#94A3B8">Loading…</div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

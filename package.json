@@ -1,15 +1,16 @@
 {
   "name": "nexbank-banking-system",
-  "version": "1.0.0",
-  "description": "NexBank - Professional Banking System",
+  "version": "2.0.0",
+  "description": "NexBank — Premium banking platform",
   "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",
-    "dev": "nodemon backend/server.js"
+    "dev": "nodemon backend/server.js",
+    "gen:secret": "node -e \"console.log('JWT_SECRET=' + require('crypto').randomBytes(48).toString('base64')); console.log('CARD_ENC_KEY=' + require('crypto').randomBytes(32).toString('hex'))\"",
+    "gen:vapid": "node -e \"const w=require('web-push'); const k=w.generateVAPIDKeys(); console.log('VAPID_PUBLIC_KEY=' + k.publicKey); console.log('VAPID_PRIVATE_KEY=' + k.privateKey)\""
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "chart.js": "^4.5.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
@@ -19,7 +20,9 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^9.6.1",
     "morgan": "^1.10.0",
+    "pdfkit": "^0.15.2",
     "uuid": "^9.0.0",
+    "web-push": "^3.6.7",
     "ws": "^8.14.2"
   },
   "devDependencies": {

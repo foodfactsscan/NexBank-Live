@@ -20,12 +20,12 @@ const adminAuth = async (req, res, next) => {
 // GET /api/admin/stats
 router.get('/stats', authMiddleware, adminAuth, async (req, res) => {
   try {
-    const allUsers = await Users.getAll();
-    const allAccounts = await Accounts.getAll();
-    const allTxns = await Transactions.getAll();
-    
-    // For loans, assuming a similar structure
-    const allLoans = await Users.getAll(); // Placeholder or actual Loans model if implemented
+    const [allUsers, allAccounts, allTxns, activeLoans] = await Promise.all([
+      Users.getAll(),
+      Accounts.getAll(),
+      Transactions.getAll(),
+      Loans.countActive()
+    ]);
 
     const totalBalance = allAccounts.reduce((sum, a) => sum + (a.balance || 0), 0);
     const totalUsers = allUsers.filter(u => u.role !== 'admin').length;
@@ -34,10 +34,11 @@ router.get('/stats', authMiddleware, adminAuth, async (req, res) => {
     res.json({
       totalBalance,
       totalUsers,
-      activeLoans: 0, // Placeholder
+      activeLoans,
       totalTransactions
     });
   } catch (err) {
+    console.error('Admin stats error:', err);
     res.status(500).json({ error: 'Failed to fetch admin stats' });
   }
 });

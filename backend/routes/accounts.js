@@ -50,11 +50,14 @@ router.get('/:id/summary', authMiddleware, async (req, res) => {
 
   // Ultra-Performant Single-Query Aggregation
   try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
     
+    const accId = req.params.id;
     const summaryAgg = await Transaction.aggregate([
-      { $match: { 
-          $or: [{ fromAccountId: req.params.id }, { toAccountId: req.params.id }],
+      { $match: {
+          $or: [{ fromAccountId: accId }, { toAccountId: accId }],
           createdAt: { $gte: sixMonthsAgo }
       }},
       { $facet: {
@@ -62,16 +65,16 @@ router.get('/:id/summary', authMiddleware, async (req, res) => {
             { $match: { createdAt: { $gte: startOfMonth } } },
             { $group: {
                 _id: null,
-                income: { $sum: { $cond: [{ $eq: ["$toAccountId", req.params.id] }, "$amount", 0] } },
-                expense: { $sum: { $cond: [{ $eq: ["$fromAccountId", req.params.id] }, "$amount", 0] } },
-                categories: { $push: { $cond: [{ $eq: ["$fromAccountId", req.params.id] }, { cat: "$category", amt: "$amount" }, "$$REMOVE"] } }
+                income: { $sum: { $cond: [{ $eq: ["$toAccountId", accId] }, "$amount", 0] } },
+                expense: { $sum: { $cond: [{ $eq: ["$fromAccountId", accId] }, "$amount", 0] } },
+                categories: { $push: { $cond: [{ $eq: ["$fromAccountId", accId] }, { cat: "$category", amt: "$amount" }, "$$REMOVE"] } }
             }}
           ],
           "trends": [
             { $group: {
                 _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
-                credit: { $sum: { $cond: [{ $eq: ["$toAccountId", req.params.id] }, "$amount", 0] } },
-                debit: { $sum: { $cond: [{ $eq: ["$fromAccountId", req.params.id] }, "$amount", 0] } }
+                credit: { $sum: { $cond: [{ $eq: ["$toAccountId", accId] }, "$amount", 0] } },
+                debit: { $sum: { $cond: [{ $eq: ["$fromAccountId", accId] }, "$amount", 0] } }
             }},
             { $sort: { "_id": 1 } }
           ]
