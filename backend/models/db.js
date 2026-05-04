@@ -58,6 +58,9 @@ const userSchema = new mongoose.Schema({
   role: { type: String, default: 'user' }, lastLogin: Date
 }, { timestamps: true });
 
+userSchema.index({ email: 1 });
+userSchema.index({ phone: 1 });
+
 const accountSchema = new mongoose.Schema({
   userId: mongoose.Schema.Types.ObjectId, accountType: { type: String, default: 'savings' }, 
   accountName: String, accountNumber: { type: String, unique: true }, 
@@ -67,12 +70,19 @@ const accountSchema = new mongoose.Schema({
   minimumBalance: { type: Number, default: 500 }, nomineeName: String
 }, { timestamps: true });
 
+accountSchema.index({ userId: 1 });
+accountSchema.index({ accountNumber: 1 });
+
 const transactionSchema = new mongoose.Schema({
   fromAccountId: String, toAccountId: String, fromAccountNumber: String, toAccountNumber: String,
   amount: Number, type: String, category: String, description: String, 
   status: { type: String, default: 'completed' }, transactionId: { type: String, unique: true },
   toAccountHolderName: String, fromAccountHolderName: String, mode: { type: String, default: 'IMPS' }
 }, { timestamps: true });
+
+transactionSchema.index({ fromAccountId: 1 });
+transactionSchema.index({ toAccountId: 1 });
+transactionSchema.index({ createdAt: -1 });
 
 const cardSchema = new mongoose.Schema({
   userId: mongoose.Schema.Types.ObjectId, accountId: mongoose.Schema.Types.ObjectId, 
@@ -82,6 +92,10 @@ const cardSchema = new mongoose.Schema({
   dailyLimit: { type: Number, default: 100000 }, internationalUsage: { type: Boolean, default: false },
   contactlessEnabled: { type: Boolean, default: true }
 }, { timestamps: true });
+
+cardSchema.index({ userId: 1 });
+cardSchema.index({ accountId: 1 });
+cardSchema.index({ cardNumber: 1 });
 
 const fdSchema = new mongoose.Schema({
   userId: mongoose.Schema.Types.ObjectId, accountId: mongoose.Schema.Types.ObjectId, 

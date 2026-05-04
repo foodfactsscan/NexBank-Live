@@ -50,7 +50,7 @@ router.get('/:id/summary', authMiddleware, async (req, res) => {
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const allTxns = await Transactions.findByAccountId(req.params.id, 1000);
+  const allTxns = await Transactions.findByAccountId(req.params.id, 200); // Reduced limit for dashboard performance
 
   // Optimized summary calculation
   const monthlyData = [];
