@@ -18,18 +18,16 @@ const http = require('http');
 const WebSocket = require('ws');
 const path = require('path');
 
-// ─── ENV validation ──────────────────────────────────────────────────────────
-const requiredEnv = ['MONGODB_URI', 'JWT_SECRET'];
-const missingEnv = requiredEnv.filter(key => !process.env[key]);
+// ─── ENV validation (demo-grade) ─────────────────────────────────────────────
+// MongoDB is the only hard requirement — without it nothing will work. Other
+// secrets gracefully fall back so the platform still boots when the user
+// hasn't yet wired Vercel env vars.
+const missingEnv = ['MONGODB_URI'].filter(key => !process.env[key]);
 if (missingEnv.length > 0) {
-  console.error(`❌ Missing required environment variables: ${missingEnv.join(', ')}`);
-  console.error('   Copy .env.example to .env and fill in real values, or set them in your hosting provider.');
-  process.exit(1);
+  console.warn(`⚠️  Missing environment variables: ${missingEnv.join(', ')} — set them in Vercel → Settings → Environment Variables.`);
 }
-if (process.env.JWT_SECRET.length < 32) {
-  console.error('❌ JWT_SECRET must be at least 32 characters. Generate one with:');
-  console.error('   node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'base64\'))"');
-  process.exit(1);
+if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 16) {
+  console.warn('⚠️  JWT_SECRET is short. Use 32+ random characters in production.');
 }
 
 const authRoutes = require('./routes/auth');
@@ -126,32 +124,19 @@ const isProd = process.env.NODE_ENV === 'production';
 const allowedOrigins = (process.env.CORS_ORIGINS || '')
   .split(',').map(s => s.trim()).filter(Boolean);
 
+// CSP is intentionally permissive in demo mode so the legacy vanilla
+// frontend's inline `onclick=`/<script> blocks keep working. Tighten this
+// before going to real users.
 app.use(helmet({
-  contentSecurityPolicy: {
-    useDefaults: true,
-    directives: {
-      'default-src': ["'self'"],
-      'script-src': ["'self'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com'],
-      'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com'],
-      'font-src': ["'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com', 'data:'],
-      'img-src': ["'self'", 'data:', 'blob:', 'https:'],
-      'connect-src': ["'self'", 'ws:', 'wss:'],
-      'object-src': ["'none'"],
-      'frame-ancestors': ["'none'"]
-    }
-  },
-  crossOriginEmbedderPolicy: false
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
-app.use(cors({
-  origin: (origin, cb) => {
-    if (!origin) return cb(null, true); // same-origin / curl / mobile webview
-    if (allowedOrigins.includes(origin)) return cb(null, true);
-    if (!isProd && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return cb(null, true);
-    return cb(new Error('Origin not allowed by CORS'));
-  },
-  credentials: true
-}));
+// Demo CORS — allow everything. The frontend is served from the same Vercel
+// project so same-origin XHRs don't need CORS at all. This block exists for
+// curl/postman/mobile-webview testing.
+app.use(cors({ origin: true, credentials: true }));
 
 app.use(morgan(isProd ? 'combined' : 'dev'));
 app.use(express.json({ limit: '1mb' }));

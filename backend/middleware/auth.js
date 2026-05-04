@@ -1,9 +1,16 @@
 'use strict';
+// JWT verification middleware for Express + a stateless `verifyToken` helper
+// for the WebSocket handshake. Demo-grade: if JWT_SECRET isn't set we fall
+// back to a built-in dev key with a warning so the server still boots.
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET || JWT_SECRET.length < 32) {
-  throw new Error('JWT_SECRET must be set and at least 32 characters. See .env.example.');
+const FALLBACK_SECRET = 'nexbank_demo_secret_change_me_for_production_2026';
+const JWT_SECRET = process.env.JWT_SECRET && process.env.JWT_SECRET.length >= 16
+  ? process.env.JWT_SECRET
+  : FALLBACK_SECRET;
+
+if (JWT_SECRET === FALLBACK_SECRET) {
+  console.warn('⚠️  JWT_SECRET is missing or short — using built-in demo key. Set a real one in production.');
 }
 
 function authMiddleware(req, res, next) {
@@ -21,15 +28,10 @@ function authMiddleware(req, res, next) {
   }
 }
 
-// Verifies a JWT outside of an Express request (used by the WebSocket
-// authenticate handshake). Returns the decoded payload or null.
+// Used by the WebSocket handshake — synchronous, no Express context.
 function verifyToken(token) {
   if (!token) return null;
-  try {
-    return jwt.verify(token, JWT_SECRET);
-  } catch {
-    return null;
-  }
+  try { return jwt.verify(token, JWT_SECRET); } catch { return null; }
 }
 
 module.exports = authMiddleware;

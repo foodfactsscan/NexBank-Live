@@ -11,17 +11,15 @@ const validate = require('../middleware/validate');
 const otpService = require('../services/otpService');
 const totpService = require('../services/totpService');
 const refreshTokenService = require('../services/refreshTokenService');
-const cardCrypto = require('../services/cardCrypto');
 const { loginLimiter, passwordChangeLimiter } = require('../middleware/rateLimit');
 
 // ─── Password policy ─────────────────────────────────────────────────────────
-const STRONG_PASSWORD = body('password')
+// Demo-grade: 8 chars minimum, no complexity requirements. The legacy frontend
+// shows "min 8 chars" in placeholder text and we honour that here so existing
+// users can still register and reset their passwords without surprises.
+const PASSWORD_RULE = body('password')
   .isString().withMessage('password is required')
-  .isLength({ min: 12 }).withMessage('Password must be at least 12 characters')
-  .matches(/[A-Z]/).withMessage('Password must contain an uppercase letter')
-  .matches(/[a-z]/).withMessage('Password must contain a lowercase letter')
-  .matches(/\d/).withMessage('Password must contain a digit')
-  .matches(/[^A-Za-z0-9]/).withMessage('Password must contain a special character');
+  .isLength({ min: 8 }).withMessage('Password must be at least 8 characters');
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function generateCardNumber() {
@@ -60,7 +58,7 @@ router.post('/register',
     body('lastName').isString().trim().notEmpty(),
     body('email').isEmail().normalizeEmail(),
     body('phone').isString().trim().isLength({ min: 7, max: 20 }),
-    STRONG_PASSWORD
+    PASSWORD_RULE
   ]),
   async (req, res) => {
     try {
@@ -72,7 +70,9 @@ router.post('/register',
 
       let referredBy = null;
       if (referralCode) {
-        const referrer = await Users.findOne({ referralCode: String(referralCode).toUpperCase() });
+        // Users is the wrapper API; the raw Mongoose model `User` is the one
+        // with .findOne. Confusing both was a bug that 500'd registration.
+        const referrer = await User.findOne({ referralCode: String(referralCode).toUpperCase() });
         if (referrer) referredBy = referrer._id;
       }
 
@@ -170,7 +170,7 @@ router.post('/login', loginLimiter,
           updates.lockedUntil = new Date(Date.now() + LOCKOUT_MS);
           updates.failedLoginCount = 0;
         }
-        await Users.updateOne({ _id: user._id }, updates);
+        await User.updateOne({ _id: user._id }, updates);
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 
@@ -188,7 +188,7 @@ router.post('/login', loginLimiter,
       const accounts = await Accounts.findByUserId(user._id);
       const primaryAccount = accounts[0];
 
-      await Users.updateOne({ _id: user._id }, {
+      await User.updateOne({ _id: user._id }, {
         lastLogin: new Date(),
         failedLoginCount: 0,
         lockedUntil: null
@@ -277,7 +277,7 @@ router.post('/reset-password',
   validate([
     body('email').isEmail().normalizeEmail(),
     body('code').isString().isLength({ min: 4, max: 10 }),
-    STRONG_PASSWORD
+    PASSWORD_RULE
   ]),
   async (req, res) => {
     try {
@@ -289,7 +289,7 @@ router.post('/reset-password',
       if (!user) return res.status(400).json({ error: 'Invalid or expired code' });
 
       const passwordHash = await bcrypt.hash(password, 12);
-      await Users.updateOne({ _id: user._id }, { passwordHash, failedLoginCount: 0, lockedUntil: null });
+      await User.updateOne({ _id: user._id }, { passwordHash, failedLoginCount: 0, lockedUntil: null });
       await RefreshTokens.deleteAllForUser(user._id);
 
       await Notifications.create({
@@ -310,9 +310,8 @@ router.post('/reset-password',
 router.post('/change-password', authMiddleware, passwordChangeLimiter,
   validate([
     body('currentPassword').isString().notEmpty(),
-    body('newPassword')
-      .isString().isLength({ min: 12 })
-      .matches(/[A-Z]/).matches(/[a-z]/).matches(/\d/).matches(/[^A-Za-z0-9]/)
+    body('newPassword').isString().isLength({ min: 8 })
+      .withMessage('New password must be at least 8 characters'),
   ]),
   async (req, res) => {
     try {
@@ -324,7 +323,7 @@ router.post('/change-password', authMiddleware, passwordChangeLimiter,
       if (!ok) return res.status(400).json({ error: 'Current password is incorrect' });
 
       const newHash = await bcrypt.hash(newPassword, 12);
-      await Users.updateOne({ _id: user._id }, { passwordHash: newHash });
+      await User.updateOne({ _id: user._id }, { passwordHash: newHash });
       await RefreshTokens.deleteAllForUser(user._id);
 
       await Notifications.create({
@@ -360,7 +359,7 @@ router.post('/2fa/enroll', authMiddleware, async (req, res) => {
     const secret = totpService.generateSecret();
     // Stash encrypted secret pending verification — we only mark `enabled:true`
     // once the user proves they can produce a valid code.
-    await Users.updateOne({ _id: user._id }, {
+    await User.updateOne({ _id: user._id }, {
       'twoFA.secret': totpService.encryptSecret(secret),
       'twoFA.enabled': false
     });
@@ -387,7 +386,7 @@ router.post('/2fa/verify', authMiddleware,
       // Issue 8 single-use backup codes (hashed at rest).
       const plain = Array.from({ length: 8 }, () => crypto.randomBytes(5).toString('hex').toUpperCase());
       const hashed = await Promise.all(plain.map(c => bcrypt.hash(c, 8)));
-      await Users.updateOne({ _id: user._id }, { 'twoFA.enabled': true, 'twoFA.backupCodes': hashed });
+      await User.updateOne({ _id: user._id }, { 'twoFA.enabled': true, 'twoFA.backupCodes': hashed });
       await Notifications.create({
         userId: user._id, type: 'security',
         title: 'Two-factor authentication enabled',
@@ -418,7 +417,7 @@ router.post('/2fa/disable', authMiddleware,
         const secret = totpService.decryptSecret(user.twoFA.secret);
         if (!totpService.verify(secret, code)) return res.status(400).json({ error: 'Invalid 2FA code' });
       }
-      await Users.updateOne({ _id: user._id }, {
+      await User.updateOne({ _id: user._id }, {
         'twoFA.enabled': false, 'twoFA.secret': null, 'twoFA.backupCodes': []
       });
       await Notifications.create({

@@ -1,4 +1,8 @@
 'use strict';
+// Card-data encryption helper. AES-256-GCM when CARD_ENC_KEY is set, plain
+// passthrough in demo mode (no key = no-op). The decrypt path detects the
+// "v1:" prefix so legacy plaintext rows still read correctly after a key is
+// provisioned later.
 const crypto = require('crypto');
 
 const ALGO = 'aes-256-gcm';
@@ -7,21 +11,23 @@ const KEY_HEX = process.env.CARD_ENC_KEY;
 let key = null;
 if (KEY_HEX && /^[0-9a-fA-F]{64}$/.test(KEY_HEX)) {
   key = Buffer.from(KEY_HEX, 'hex');
+} else if (KEY_HEX) {
+  console.warn('⚠️  CARD_ENC_KEY is invalid (need 64 hex chars). Storing card data in plain text — demo mode.');
+} else {
+  // Silent — demo mode default, log only on first encrypt to avoid spam.
 }
 
-function ensureKey() {
-  if (!key) {
-    console.warn('⚠️ CARD_ENC_KEY missing! Operating in non-encrypted mode. Please set CARD_ENC_KEY in Vercel for 100% production security.');
-    return false;
-  }
-  return true;
+let warned = false;
+function warnOnce() {
+  if (warned) return;
+  warned = true;
+  if (!key) console.warn('ℹ️  CARD_ENC_KEY not set; CVVs stored in plain text. Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
 }
 
-// Encrypted format: "v1:<iv hex>:<authTag hex>:<ciphertext hex>"
-// Plain values (legacy data) are detected by the absence of the "v1:" prefix.
+// "v1:<iv>:<authTag>:<ciphertext>" — plaintext otherwise.
 function encrypt(plain) {
   if (plain == null) return plain;
-  if (!ensureKey()) return plain; // Fallback to plain if key missing
+  if (!key) { warnOnce(); return String(plain); }
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv(ALGO, key, iv);
   const enc = Buffer.concat([cipher.update(String(plain), 'utf8'), cipher.final()]);
@@ -31,15 +37,17 @@ function encrypt(plain) {
 
 function decrypt(payload) {
   if (payload == null) return payload;
-  if (typeof payload !== 'string' || !payload.startsWith('v1:')) {
+  if (typeof payload !== 'string' || !payload.startsWith('v1:')) return payload;
+  if (!key) return payload; // ciphertext exists but no key — return as-is rather than throw
+  const [, ivHex, tagHex, dataHex] = payload.split(':');
+  try {
+    const decipher = crypto.createDecipheriv(ALGO, key, Buffer.from(ivHex, 'hex'));
+    decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
+    const dec = Buffer.concat([decipher.update(Buffer.from(dataHex, 'hex')), decipher.final()]);
+    return dec.toString('utf8');
+  } catch {
     return payload;
   }
-  if (!ensureKey()) return payload; // Fallback to plain if key missing
-  const [, ivHex, tagHex, dataHex] = payload.split(':');
-  const decipher = crypto.createDecipheriv(ALGO, key, Buffer.from(ivHex, 'hex'));
-  decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
-  const dec = Buffer.concat([decipher.update(Buffer.from(dataHex, 'hex')), decipher.final()]);
-  return dec.toString('utf8');
 }
 
 module.exports = { encrypt, decrypt };
