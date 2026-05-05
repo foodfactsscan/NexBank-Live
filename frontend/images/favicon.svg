@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="NexBank">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0"   stop-color="#6366F1"/>
+      <stop offset=".55" stop-color="#06B6D4"/>
+      <stop offset="1"   stop-color="#10B981"/>
+    </linearGradient>
+    <linearGradient id="s" x1="0" y1="0" x2="0" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="48" height="48" rx="11" fill="url(#g)"/>
+  <rect width="48" height="22" rx="11" fill="url(#s)"/>
+  <path d="M14 34 V14 L34 34 V14"
+        stroke="#fff" stroke-width="3.6"
+        stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="34" cy="14" r="2.6" fill="#fff"/>
+</svg>
