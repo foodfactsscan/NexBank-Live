@@ -44,25 +44,6 @@ export function AuthShell({ children }: Props) {
             Instant transfers, savings goals that actually work, virtual cards
             you can freeze on a tap, and insights that help you spend smarter.
           </p>
-
-          <div style={{ display: 'flex', gap: 16, marginTop: 32 }}>
-            {[
-              ['10M+', 'Customers'],
-              ['₹2T+', 'Transferred'],
-              ['99.99%', 'Uptime'],
-            ].map(([v, l]) => (
-              <div key={l as string} style={{
-                padding: '14px 18px',
-                background: 'rgba(17, 23, 42, 0.5)',
-                border: '1px solid var(--line)',
-                borderRadius: 14,
-                backdropFilter: 'blur(10px)',
-              }}>
-                <div style={{ fontWeight: 800, fontSize: 22 }}>{v}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{l}</div>
-              </div>
-            ))}
-          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-3)', fontSize: 12 }}>

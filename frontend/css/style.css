@@ -710,11 +710,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin:8p
   font-size: 0.9rem;
 }
 
-.nx-fineprint {
-  font-size: 0.78rem; color: var(--nx-text-3);
-  letter-spacing: 0.02em;
-  margin: 0;
-}
+/* nx-fineprint removed — trust-counter line was deleted from the auth markup. */
 
 /* ── Right panel ────────────────────────────────────────────────────────── */
 .nx-auth-panel {
@@ -889,4 +885,84 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin:8p
   .nx-auth-card { padding: 24px 18px; max-width: 100%; }
   .nx-tabs { margin-bottom: 22px; }
   .nx-auth-card .auth-form h2 { font-size: 1.35rem; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE FIXES
+   - body-scroll lock when the bottom-sheet sidebar is open
+   - keep every page within the viewport so wide tables scroll inside their
+     own card instead of pushing the layout off-screen
+   - sign-in alignment polish on small viewports
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Body-scroll lock. We freeze the document and pin its position so neither
+   iOS rubber-band nor Android touch-drag can move the page behind the sheet.
+   The original scroll offset is restored from JS when the sheet closes. */
+html.nav-locked,
+body.nav-locked {
+  overflow: hidden !important;
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+body.nav-locked {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+}
+.sidebar-overlay { touch-action: none; }
+
+/* Universal containment so a wide child (a 7-column table, a long status
+   chip, etc.) can never bust the viewport. Each level says "I am at most
+   100% of my parent — anything wider should scroll inside my own box". */
+html, body { overflow-x: hidden; max-width: 100vw; }
+.page-content,
+.page-content > .view,
+.view > .card,
+.transfer-container { max-width: 100%; min-width: 0; box-sizing: border-box; }
+.card, .data-table, .amort-table-wrap, .nx-auth-card { max-width: 100%; min-width: 0; }
+
+/* Wide data tables: lock them inside their card so the horizontal scroll
+   stays contained even on small viewports. */
+.card > div[style*="overflow-x:auto"],
+.card > div[style*="overflow-x: auto"] {
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.data-table { min-width: 560px; }       /* prevents column-collapse on phones */
+
+@media (max-width: 768px) {
+  /* History page polish: filter row stacks one per line, full-width buttons,
+     header + export button wrap instead of overflowing. */
+  #view-transactions .flex.justify-between { flex-wrap: wrap; gap: 8px; }
+  #view-transactions .grid-3 {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+  #view-transactions .grid-3 .btn-primary { height: 44px; width: 100%; }
+
+  /* Investments / FD page: the two open-FD + benefits cards stack, and the
+     FD list table scrolls horizontally inside its card. */
+  #view-investments .grid-2 { grid-template-columns: 1fr !important; gap: 12px; }
+  #view-investments .card[style*="padding:0"] { padding: 0; }
+
+  /* Card padding shrinks slightly so the inner table has more room. */
+  .page-content .card { padding: 16px; }
+  .page-content .card .section-title { font-size: 1rem; }
+
+  /* Sign-in card vertical alignment + brand centering on phones. */
+  .nx-auth-panel { align-items: flex-start; padding-top: 24px; }
+  .nx-auth-card .nx-brand-mobile { justify-content: center; width: 100%; }
+  .nx-tabs { width: 100%; }
+  .nx-tab { padding: 11px 8px; }
+  .nx-auth-card .form-row { flex-wrap: wrap; row-gap: 8px; }
+  .nx-auth-card .input-group input,
+  .nx-auth-card .input-group select { font-size: 16px; } /* prevents iOS auto-zoom */
+}
+
+@media (max-width: 480px) {
+  .data-table th, .data-table td { padding: 10px 12px; font-size: 0.8rem; }
+  .data-table { min-width: 520px; }
+  .page-content .card { padding: 14px; border-radius: 16px; }
+  .page-content { padding: 14px 12px 96px !important; }
 }
